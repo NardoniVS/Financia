@@ -1,14 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import {
-  signInWithPopup,
-  signOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  User as FirebaseUser,
-} from 'firebase/auth';
-import { auth, googleProvider, testFirestoreConnection } from '../lib/firebase';
-import { firestoreService } from '../services/firestoreService';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { getSupabase, supabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import {
   Transaction,
   BankCard,
@@ -20,17 +13,6 @@ import {
   UserProfile,
   NotificationItem,
 } from '../types/finology';
-import {
-  initialUserProfile,
-  initialTransactions,
-  initialBudgets,
-  initialSubscriptions,
-  initialCards,
-  initialConnectedAccounts,
-  initialMarketIndices,
-  initialAssets,
-  initialNotifications,
-} from '../data/mockData';
 
 interface FinologyContextType {
   // Theme & App Settings
@@ -51,16 +33,14 @@ interface FinologyContextType {
   setActiveBottomTab: (tab: string) => void;
 
   // Auth & User Profile
-  currentUser: FirebaseUser | null;
+  currentUser: SupabaseUser | null;
+  isAuthReady: boolean;
   isAuthenticated: boolean;
   userProfile: UserProfile;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
-  registerWithEmail: (name: string, email: string, pass: string) => Promise<void>;
-  loginAsDemo: () => void;
+  registerWithEmail: (name: string, email: string, pass: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  isAuthModalOpen: boolean;
-  setIsAuthModalOpen: (open: boolean) => void;
   authError: string | null;
 
   // Transactions
@@ -233,24 +213,29 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activeTopTab, setActiveTopTab] = useState<'manage' | 'invest'>('manage');
   const [activeBottomTab, setActiveBottomTab] = useState<string>('dashboard');
 
-  // Firebase Auth State
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isDemoUser, setIsDemoUser] = useState<boolean>(true);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Supabase Auth State
+  const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // User Profile
-  const [userProfile, setUserProfile] = useState<UserProfile>(initialUserProfile);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    name: 'Minha conta',
+    email: '',
+    avatarUrl: '',
+    accountLevel: 'Gratuito',
+    privacyMode: false,
+  });
 
   // Core Data States
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [cards, setCards] = useState<BankCard[]>(initialCards);
-  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>(initialConnectedAccounts);
-  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
-  const [assets, setAssets] = useState<InvestmentAsset[]>(initialAssets);
-  const [marketIndices] = useState<MarketIndex[]>(initialMarketIndices);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [cards, setCards] = useState<BankCard[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [assets, setAssets] = useState<InvestmentAsset[]>([]);
+  const [marketIndices] = useState<MarketIndex[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   // Selection & Modals
   const [selectedAsset, setSelectedAsset] = useState<InvestmentAsset | null>(null);
@@ -263,59 +248,66 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isConnectBankModalOpen, setIsConnectBankModalOpen] = useState(false);
   const [isSyncingAccount, setIsSyncingAccount] = useState(false);
 
-  // Test Firestore Connection once at startup
+  // Listen to Supabase Auth state.
   useEffect(() => {
-    testFirestoreConnection();
-  }, []);
+    if (!supabase) {
+      setIsAuthReady(true);
+      return;
+    }
 
-  // Listen to Firebase Auth state
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
-        setIsDemoUser(false);
-        setUserProfile({
-          name: user.displayName || user.email?.split('@')[0] || 'Usuário Finology',
-          email: user.email || '',
-          avatarUrl: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=1A5CFF&color=fff`,
-          accountLevel: 'Pro',
-          privacyMode: false,
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = session?.user ?? null;
+      setCurrentUser(user);
+      setIsAuthReady(true);
+      if (!user) {
+        setUserProfile({ name: 'Minha conta', email: '', avatarUrl: '', accountLevel: 'Gratuito', privacyMode: false });
+        setTransactions([]);
+        setCards([]);
+        setConnectedAccounts([]);
+        setBudgets([]);
+        setAssets([]);
+        setNotifications([]);
+        setSelectedAsset(null);
+        return;
+      }
+
+      const metadata = user.user_metadata ?? {};
+      const displayName = String(metadata.name ?? metadata.full_name ?? user.email?.split('@')[0] ?? 'Usuário Finology');
+      const profile: UserProfile = {
+        name: displayName,
+        email: user.email || '',
+        avatarUrl: String(metadata.avatar_url ?? metadata.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A5CFF&color=fff`),
+        accountLevel: 'Pro',
+        privacyMode: false,
+      };
+      setUserProfile(profile);
+
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        // Defer requests until after the auth callback returns to avoid blocking token refresh.
+        queueMicrotask(() => {
+          void (async () => {
+            try {
+              await supabaseService.saveUserProfile(user.id, profile);
+            } catch (error) {
+              console.error('Supabase account setup failed:', error);
+            }
+          })();
         });
-
-        // Seed initial data in Firestore for user if not yet present
-        await firestoreService.seedInitialUserData(user.uid);
-      } else {
-        setCurrentUser(null);
-        // keep demo user active so app is immediately usable
       }
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Real-time Firestore Subscriptions when a real user is authenticated
+  // Real-time Supabase subscriptions when a user is authenticated.
   useEffect(() => {
     if (!currentUser) return;
 
-    const unsubTx = firestoreService.subscribeTransactions(currentUser.uid, (data) => {
-      if (data.length > 0) setTransactions(data);
-    });
-
-    const unsubCards = firestoreService.subscribeCards(currentUser.uid, (data) => {
-      if (data.length > 0) setCards(data);
-    });
-
-    const unsubBudgets = firestoreService.subscribeBudgets(currentUser.uid, (data) => {
-      if (data.length > 0) setBudgets(data);
-    });
-
-    const unsubAccounts = firestoreService.subscribeAccounts(currentUser.uid, (data) => {
-      if (data.length > 0) setConnectedAccounts(data);
-    });
-
-    const unsubAssets = firestoreService.subscribeAssets(currentUser.uid, (data) => {
-      if (data.length > 0) setAssets(data);
-    });
+    const unsubTx = supabaseService.subscribeTransactions(currentUser.id, setTransactions);
+    const unsubCards = supabaseService.subscribeCards(currentUser.id, setCards);
+    const unsubBudgets = supabaseService.subscribeBudgets(currentUser.id, setBudgets);
+    const unsubAccounts = supabaseService.subscribeAccounts(currentUser.id, setConnectedAccounts);
+    const unsubAssets = supabaseService.subscribeAssets(currentUser.id, setAssets);
 
     return () => {
       unsubTx();
@@ -330,7 +322,11 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const loginWithGoogle = async () => {
     setAuthError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const { error } = await getSupabase().auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
     } catch (err: any) {
       console.error('Google Sign In Error:', err);
       setAuthError(err?.message || 'Falha ao autenticar com o Google.');
@@ -341,47 +337,40 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const loginWithEmail = async (email: string, pass: string) => {
     setAuthError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      const { error } = await getSupabase().auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
     } catch (err: any) {
       setAuthError('Email ou senha incorretos.');
       throw err;
     }
   };
 
-  const registerWithEmail = async (name: string, email: string, pass: string) => {
+  const registerWithEmail = async (name: string, email: string, pass: string): Promise<boolean> => {
     setAuthError(null);
     try {
-      const res = await createUserWithEmailAndPassword(auth, email, pass);
-      if (res.user) {
-        await firestoreService.saveUserProfile(res.user.uid, {
-          name,
-          email,
-          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1A5CFF&color=fff`,
-          accountLevel: 'Pro',
-          privacyMode: false,
-        });
-      }
+      const { data, error } = await getSupabase().auth.signUp({
+        email,
+        password: pass,
+        options: {
+          data: {
+            name,
+            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1A5CFF&color=fff`,
+          },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      return Boolean(data.session);
     } catch (err: any) {
       setAuthError(err?.message || 'Erro ao registrar usuário.');
       throw err;
     }
   };
 
-  const loginAsDemo = () => {
-    setIsDemoUser(true);
-    setUserProfile(initialUserProfile);
-    setTransactions(initialTransactions);
-    setCards(initialCards);
-    setConnectedAccounts(initialConnectedAccounts);
-    setBudgets(initialBudgets);
-    setAssets(initialAssets);
-  };
-
   const logout = async () => {
     if (currentUser) {
-      await signOut(auth);
+      await getSupabase().auth.signOut();
     }
-    loginAsDemo();
   };
 
   // Financial Calculations
@@ -418,7 +407,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return (totalInvestedProfit / totalCostBasis) * 100;
   }, [totalInvestedProfit, totalCostBasis]);
 
-  // Actions with Firestore Sync
+  // Actions with Supabase Sync
   const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
     const newTx: Transaction = {
       ...tx,
@@ -427,9 +416,9 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setTransactions(prev => [newTx, ...prev]);
 
-    // Persist in Firestore if authenticated
+    // Persist in Supabase if authenticated
     if (currentUser) {
-      firestoreService.addTransaction(currentUser.uid, newTx);
+      supabaseService.addTransaction(currentUser.id, newTx);
     }
 
     // Update account balance
@@ -445,7 +434,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
       setConnectedAccounts(prev => [updatedAcc, ...prev.slice(1)]);
       if (currentUser) {
-        firestoreService.updateAccount(currentUser.uid, updatedAcc);
+        supabaseService.updateAccount(currentUser.id, updatedAcc);
       }
     }
 
@@ -455,7 +444,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         prev.map(b => {
           if (b.category === tx.category) {
             const updated = { ...b, spent: b.spent + Math.abs(tx.amount) };
-            if (currentUser) firestoreService.updateBudget(currentUser.uid, updated);
+            if (currentUser) supabaseService.updateBudget(currentUser.id, updated);
             return updated;
           }
           return b;
@@ -467,7 +456,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteTransaction = (id: string) => {
     setTransactions(prev => prev.filter(tx => tx.id !== id));
     if (currentUser) {
-      firestoreService.deleteTransaction(currentUser.uid, id);
+      supabaseService.deleteTransaction(currentUser.id, id);
     }
   };
 
@@ -478,7 +467,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setCards(prev => [...prev, newCard]);
     if (currentUser) {
-      firestoreService.addCard(currentUser.uid, newCard);
+      supabaseService.addCard(currentUser.id, newCard);
     }
   };
 
@@ -486,7 +475,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCards(prev =>
       prev.map(card => {
         const updated = { ...card, isDefault: card.id === id };
-        if (currentUser) firestoreService.addCard(currentUser.uid, updated);
+        if (currentUser) supabaseService.addCard(currentUser.id, updated);
         return updated;
       })
     );
@@ -499,7 +488,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       prev.map(acc => {
         if (acc.id === id) {
           const updated = { ...acc, lastSync: 'Agora mesmo' };
-          if (currentUser) firestoreService.updateAccount(currentUser.uid, updated);
+          if (currentUser) supabaseService.updateAccount(currentUser.id, updated);
           return updated;
         }
         return acc;
@@ -521,7 +510,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setConnectedAccounts(prev => [...prev, newAccount]);
     if (currentUser) {
-      firestoreService.updateAccount(currentUser.uid, newAccount);
+      supabaseService.updateAccount(currentUser.id, newAccount);
     }
   };
 
@@ -532,7 +521,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setBudgets(prev => [...prev, newBudget]);
     if (currentUser) {
-      firestoreService.updateBudget(currentUser.uid, newBudget);
+      supabaseService.updateBudget(currentUser.id, newBudget);
     }
   };
 
@@ -541,7 +530,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       prev.map(b => {
         if (b.id === id) {
           const updated = { ...b, limit: newLimit };
-          if (currentUser) firestoreService.updateBudget(currentUser.uid, updated);
+          if (currentUser) supabaseService.updateBudget(currentUser.id, updated);
           return updated;
         }
         return b;
@@ -587,7 +576,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       const updatedAsset = { ...asset, quantity: newTotalQty, averagePrice: newAvgPrice };
       setAssets(prev => prev.map(a => (a.id === assetId ? updatedAsset : a)));
-      if (currentUser) firestoreService.updateAsset(currentUser.uid, updatedAsset);
+      if (currentUser) supabaseService.updateAsset(currentUser.id, updatedAsset);
 
       addTransaction({
         title: `Compra de ${asset.ticker}`,
@@ -603,7 +592,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const newTotalQty = asset.quantity - quantity;
       const updatedAsset = { ...asset, quantity: newTotalQty };
       setAssets(prev => prev.map(a => (a.id === assetId ? updatedAsset : a)));
-      if (currentUser) firestoreService.updateAsset(currentUser.uid, updatedAsset);
+      if (currentUser) supabaseService.updateAsset(currentUser.id, updatedAsset);
 
       addTransaction({
         title: `Venda de ${asset.ticker}`,
@@ -647,15 +636,13 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeBottomTab,
         setActiveBottomTab,
         currentUser,
+        isAuthReady,
         isAuthenticated: !!currentUser,
         userProfile,
         loginWithGoogle,
         loginWithEmail,
         registerWithEmail,
-        loginAsDemo,
         logout,
-        isAuthModalOpen,
-        setIsAuthModalOpen,
         authError,
         transactions,
         addTransaction,

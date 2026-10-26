@@ -27,8 +27,20 @@ export const RechartsBalanceLine: React.FC<RechartsBalanceLineProps> = ({
   privacyMode = false,
   onHoverPoint,
 }) => {
-  const minVal = Math.min(...data.map(d => d.balance)) * 0.95;
-  const maxVal = Math.max(...data.map(d => d.balance)) * 1.05;
+  if (data.length === 0) {
+    return (
+      <div className="w-full h-[120px] flex items-center justify-center text-xs text-blue-100/70">
+        Ainda não há movimentações para exibir neste período.
+      </div>
+    );
+  }
+
+  const balances = data.map((point) => point.balance);
+  const minBalance = Math.min(...balances);
+  const maxBalance = Math.max(...balances);
+  const padding = (maxBalance - minBalance) * 0.05 || Math.max(Math.abs(maxBalance) * 0.05, 1);
+  const minVal = minBalance - padding;
+  const maxVal = maxBalance + padding;
 
   return (
     <div className="w-full h-[120px] relative select-none">

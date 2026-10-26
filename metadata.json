@@ -2,5 +2,5 @@
   "name": "Finology - Gestão Financeira & Investimentos",
   "description": "Aplicativo completo de gestão financeira pessoal e investimentos com controle de gastos, orçamentos, Open Finance e carteira de ativos.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

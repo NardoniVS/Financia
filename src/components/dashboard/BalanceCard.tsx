@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ArrowUpRight, ArrowDownLeft, ChevronDown, PlusCircle } from 'lucide-react';
 import { useFinology } from '../../context/FinologyContext';
 import { formatCurrency } from '../../utils/formatters';
@@ -11,47 +11,69 @@ export const BalanceCard: React.FC = () => {
     totalExpense,
     privacyMode,
     setIsQuickActionOpen,
+    transactions,
   } = useFinology();
 
-  const [selectedPeriod, setSelectedPeriod] = useState<'Outubro' | 'Setembro' | 'Total'>('Outubro');
+  const [selectedPeriod, setSelectedPeriod] = useState<'Mês atual' | 'Mês anterior' | 'Tudo'>('Mês atual');
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<BalancePoint | null>(null);
 
-  // Dynamic datasets per period with realistic points
-  const datasets: Record<'Outubro' | 'Setembro' | 'Total', BalancePoint[]> = {
-    Outubro: [
-      { date: '01 Out', fullDate: '01 de Outubro', balance: 39500, flow: 1200 },
-      { date: '05 Out', fullDate: '05 de Outubro', balance: 41200, flow: 1700 },
-      { date: '10 Out', fullDate: '10 de Outubro', balance: 40100, flow: -1100 },
-      { date: '15 Out', fullDate: '15 de Outubro', balance: 43400, flow: 3300 },
-      { date: '20 Out', fullDate: '20 de Outubro', balance: 42800, flow: -600 },
-      { date: '23 Out', fullDate: '23 de Outubro', balance: 44200, flow: 1400 },
-      { date: 'Hoje', fullDate: '26 de Outubro (Hoje)', balance: totalBalance, flow: 1090.33 },
-    ],
-    Setembro: [
-      { date: '01 Set', fullDate: '01 de Setembro', balance: 34200, flow: 850 },
-      { date: '08 Set', fullDate: '08 de Setembro', balance: 36500, flow: 2300 },
-      { date: '15 Set', fullDate: '15 de Setembro', balance: 35800, flow: -700 },
-      { date: '22 Set', fullDate: '22 de Setembro', balance: 38100, flow: 2300 },
-      { date: '30 Set', fullDate: '30 de Setembro', balance: 39500, flow: 1400 },
-    ],
-    Total: [
-      { date: 'Mai', fullDate: 'Maio de 2026', balance: 28000, flow: 3200 },
-      { date: 'Jun', fullDate: 'Junho de 2026', balance: 31400, flow: 3400 },
-      { date: 'Jul', fullDate: 'Julho de 2026', balance: 33900, flow: 2500 },
-      { date: 'Ago', fullDate: 'Agosto de 2026', balance: 36200, flow: 2300 },
-      { date: 'Set', fullDate: 'Setembro de 2026', balance: 39500, flow: 3300 },
-      { date: 'Out', fullDate: 'Outubro de 2026 (Atual)', balance: totalBalance, flow: 6320.76 },
-    ],
-  };
+  const currentData = useMemo(() => {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const start = selectedPeriod === 'Mês atual'
+      ? thisMonthStart
+      : selectedPeriod === 'Mês anterior'
+        ? lastMonthStart
+        : null;
+    const end = selectedPeriod === 'Mês atual'
+      ? nextMonthStart
+      : selectedPeriod === 'Mês anterior'
+        ? thisMonthStart
+        : null;
 
-  const currentData = datasets[selectedPeriod];
+    const datedTransactions = transactions
+      .map((transaction) => ({ transaction, date: new Date(transaction.date) }))
+      .filter(({ date }) => !Number.isNaN(date.getTime()));
+    const periodTransactions = datedTransactions
+      .filter(({ date }) => (!start || date >= start) && (!end || date < end))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    if (periodTransactions.length === 0) return [];
+
+    const changesSincePeriodStart = datedTransactions
+      .filter(({ date }) => !start || date >= start)
+      .reduce((sum, { transaction }) => sum + transaction.amount, 0);
+    let runningBalance = totalBalance - changesSincePeriodStart;
+    const dailyFlows = new Map<string, { date: Date; flow: number }>();
+
+    for (const { transaction, date } of periodTransactions) {
+      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      const day = dailyFlows.get(dayKey) ?? { date, flow: 0 };
+      day.flow += transaction.amount;
+      dailyFlows.set(dayKey, day);
+    }
+
+    return Array.from(dailyFlows.values())
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map(({ date, flow }) => {
+        runningBalance += flow;
+        return {
+          date: new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date).replace('.', ''),
+          fullDate: new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(date),
+          balance: runningBalance,
+          flow,
+        };
+      });
+  }, [selectedPeriod, totalBalance, transactions]);
 
   // If user is hovering a specific point, reflect that value in the header
   const displayBalance = hoveredPoint ? hoveredPoint.balance : totalBalance;
   const displayDateNotice = hoveredPoint
     ? `Saldo em ${hoveredPoint.fullDate}`
-    : '+12,4% no mês · Atualizado há 2 min';
+    : currentData.length > 0 ? 'Histórico calculado pelos seus lançamentos' : 'Sem movimentações neste período';
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 sm:p-6 text-white shadow-xl shadow-blue-700/20">
@@ -80,7 +102,7 @@ export const BalanceCard: React.FC = () => {
 
           {isPeriodMenuOpen && (
             <div className="absolute right-0 top-full mt-1.5 w-28 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-xl py-1 text-xs z-30 border border-slate-100 dark:border-slate-800">
-              {(['Outubro', 'Setembro', 'Total'] as const).map((period) => (
+              {(['Mês atual', 'Mês anterior', 'Tudo'] as const).map((period) => (
                 <button
                   key={period}
                   type="button"

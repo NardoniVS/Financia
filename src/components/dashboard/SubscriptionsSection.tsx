@@ -20,6 +20,11 @@ export const SubscriptionsSection: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {subscriptions.length === 0 && (
+          <p className="col-span-full py-4 text-center text-xs text-slate-400 dark:text-slate-500">
+            Nenhuma assinatura cadastrada.
+          </p>
+        )}
         {subscriptions.map((sub) => {
           return (
             <div

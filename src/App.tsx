@@ -23,10 +23,20 @@ import { BudgetsScreen } from './components/budgets/BudgetsScreen';
 import { QuickActionModal } from './components/common/QuickActionModal';
 import { NotificationModal } from './components/common/NotificationModal';
 import { SearchModal } from './components/common/SearchModal';
-import { AuthModal } from './components/auth/AuthModal';
+import { AuthPage } from './components/auth/AuthPage';
 
 const MainAppContent: React.FC = () => {
-  const { activeBottomTab, isAuthModalOpen, setIsAuthModalOpen } = useFinology();
+  const { activeBottomTab, currentUser, isAuthReady } = useFinology();
+
+  if (!isAuthReady) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center text-sm font-medium text-slate-400">
+        Carregando sua conta…
+      </main>
+    );
+  }
+
+  if (!currentUser) return <AuthPage />;
 
   return (
     <MobileFrame>
@@ -58,7 +68,6 @@ const MainAppContent: React.FC = () => {
       <QuickActionModal />
       <NotificationModal />
       <SearchModal />
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </MobileFrame>
   );
 };

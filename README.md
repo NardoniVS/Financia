@@ -1,20 +1,24 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Financia
 
-# Run and deploy your AI Studio app
+Aplicativo de controle financeiro pessoal com Supabase para autenticação e persistência dos dados.
 
-This contains everything you need to run your app locally.
+## Configuração do Supabase
 
-View your app in AI Studio: https://ai.studio/apps/eda8ffeb-9d43-4b7e-abe0-981e6ce64337
+1. Crie um projeto no Supabase.
+2. No SQL Editor do projeto, execute [`supabase/migrations/20261026000000_initial_schema.sql`](supabase/migrations/20261026000000_initial_schema.sql). Se a versão antiga da demo já foi usada neste banco, execute também [`supabase/migrations/20261026010000_remove_demo_data.sql`](supabase/migrations/20261026010000_remove_demo_data.sql) para apagar somente os registros de exemplo criados por ela.
+3. Copie `.env.example` para `.env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` com os valores do projeto.
+4. Em **Authentication → URL Configuration**, adicione `http://localhost:3000` à lista de URLs de redirecionamento.
+5. Para login com Google, configure o provedor em **Authentication → Sign In / Providers** e cadastre no Google Cloud a URL de callback informada pelo Supabase.
 
-## Run Locally
+O app usa Row Level Security: cada usuário só pode acessar os próprios dados.
 
-**Prerequisites:**  Node.js
+## Rodar localmente
 
+**Pré-requisito:** Node.js
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+npm run dev
+```
+
+O Vite inicia o app em `http://localhost:3000`.
