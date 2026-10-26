@@ -34,6 +34,7 @@ interface FinologyContextType {
 
   // Auth & User Profile
   currentUser: SupabaseUser | null;
+  isAdmin: boolean;
   isAuthReady: boolean;
   isAuthenticated: boolean;
   userProfile: UserProfile;
@@ -375,8 +376,17 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Financial Calculations
   const totalBalance = useMemo(() => {
-    return connectedAccounts.reduce((sum, acc) => sum + acc.balance, 0);
-  }, [connectedAccounts]);
+    if (connectedAccounts.length > 0) {
+      return connectedAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+    }
+
+    // With no linked accounts, derive the available balance from the user's ledger.
+    return transactions.reduce((balance, tx) => {
+      if (tx.type === 'income') return balance + Math.abs(tx.amount);
+      if (tx.type === 'expense') return balance - Math.abs(tx.amount);
+      return balance;
+    }, 0);
+  }, [connectedAccounts, transactions]);
 
   const totalIncome = useMemo(() => {
     return transactions
@@ -636,6 +646,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeBottomTab,
         setActiveBottomTab,
         currentUser,
+        isAdmin: currentUser?.app_metadata?.role === 'admin',
         isAuthReady,
         isAuthenticated: !!currentUser,
         userProfile,

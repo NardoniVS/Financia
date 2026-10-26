@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowUpRight, ArrowDownLeft, ChevronDown, PlusCircle } from 'lucide-react';
 import { useFinology } from '../../context/FinologyContext';
 import { formatCurrency } from '../../utils/formatters';
@@ -16,6 +17,7 @@ export const BalanceCard: React.FC = () => {
 
   const [selectedPeriod, setSelectedPeriod] = useState<'Mês atual' | 'Mês anterior' | 'Tudo'>('Mês atual');
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const [periodMenuPosition, setPeriodMenuPosition] = useState({ top: 0, right: 0 });
   const [hoveredPoint, setHoveredPoint] = useState<BalancePoint | null>(null);
 
   const currentData = useMemo(() => {
@@ -76,10 +78,12 @@ export const BalanceCard: React.FC = () => {
     : currentData.length > 0 ? 'Histórico calculado pelos seus lançamentos' : 'Sem movimentações neste período';
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 sm:p-6 text-white shadow-xl shadow-blue-700/20">
-      {/* Background soft geometric mesh glows */}
-      <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+    <div className="relative rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 sm:p-6 text-white shadow-xl shadow-blue-700/20">
+      {/* Keep decorative glows clipped without clipping the period menu. */}
+      <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl" />
+      </div>
 
       {/* Top Header inside Card */}
       <div className="relative z-10 flex items-center justify-between mb-2">
@@ -90,35 +94,57 @@ export const BalanceCard: React.FC = () => {
         </div>
 
         {/* Period Selector Dropdown */}
-        <div className="relative">
+        <div>
           <button
             type="button"
-            onClick={() => setIsPeriodMenuOpen(!isPeriodMenuOpen)}
-            className="flex items-center gap-1 text-xs font-semibold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-full text-white transition-colors cursor-pointer"
+            aria-label="Selecionar período do gráfico de saldo"
+            aria-haspopup="listbox"
+            aria-expanded={isPeriodMenuOpen}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              setPeriodMenuPosition({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+              setIsPeriodMenuOpen((open) => !open);
+            }}
+            className="flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-blue-950/10 transition-colors hover:border-white/35 hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           >
             <span>{selectedPeriod}</span>
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isPeriodMenuOpen ? 'rotate-180' : ''}`} />
           </button>
-
-          {isPeriodMenuOpen && (
-            <div className="absolute right-0 top-full mt-1.5 w-28 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-xl py-1 text-xs z-30 border border-slate-100 dark:border-slate-800">
-              {(['Mês atual', 'Mês anterior', 'Tudo'] as const).map((period) => (
-                <button
-                  key={period}
-                  type="button"
-                  onClick={() => {
-                    setSelectedPeriod(period);
-                    setIsPeriodMenuOpen(false);
-                    setHoveredPoint(null);
-                  }}
-                  className={`w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
-                    selectedPeriod === period ? 'font-bold text-blue-600 dark:text-blue-400' : ''
-                  }`}
-                >
-                  {period}
-                </button>
-              ))}
-            </div>
+          {isPeriodMenuOpen && createPortal(
+            <>
+              <button
+                type="button"
+                aria-label="Fechar opções de período"
+                className="fixed inset-0 z-[9998] cursor-default"
+                onClick={() => setIsPeriodMenuOpen(false)}
+              />
+              <div
+                role="listbox"
+                aria-label="Período do gráfico de saldo"
+                style={{ top: periodMenuPosition.top, right: periodMenuPosition.right }}
+                className="fixed z-[9999] min-w-36 overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 p-1 text-xs text-slate-100 shadow-2xl shadow-slate-950/40 backdrop-blur-xl"
+              >
+                {(['Mês atual', 'Mês anterior', 'Tudo'] as const).map((period) => (
+                  <button
+                    key={period}
+                    type="button"
+                    role="option"
+                    aria-selected={selectedPeriod === period}
+                    onClick={() => {
+                      setSelectedPeriod(period);
+                      setIsPeriodMenuOpen(false);
+                      setHoveredPoint(null);
+                    }}
+                    className={`block w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-blue-500/20 ${
+                      selectedPeriod === period ? 'bg-blue-500/15 font-semibold text-blue-300' : 'text-slate-200'
+                    }`}
+                  >
+                    {period}
+                  </button>
+                ))}
+              </div>
+            </>,
+            document.body,
           )}
         </div>
       </div>

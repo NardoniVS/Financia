@@ -15,7 +15,7 @@ export const SpendingsDonut: React.FC = () => {
 
   // Group expenses by category
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
-  const totalExpense = expenseTransactions.reduce((acc, t) => acc + Math.abs(t.amount), 0) || 1;
+  const totalExpense = expenseTransactions.reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   const categoryMap: { [key: string]: { amount: number; color: string } } = {
     'Alimentação': { amount: 0, color: '#3B82F6' },
@@ -37,7 +37,7 @@ export const SpendingsDonut: React.FC = () => {
     category: cat,
     amount: categoryMap[cat].amount,
     color: categoryMap[cat].color,
-    percent: Math.round((categoryMap[cat].amount / totalExpense) * 100),
+    percent: totalExpense > 0 ? Math.round((categoryMap[cat].amount / totalExpense) * 100) : 0,
   })).filter(c => c.amount > 0);
 
   // SVG Donut calculation

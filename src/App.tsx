@@ -18,6 +18,7 @@ import { SubscriptionsSection } from './components/dashboard/SubscriptionsSectio
 
 // Budgets Screen & Modals
 import { BudgetsScreen } from './components/budgets/BudgetsScreen';
+import { AdminPage } from './components/admin/AdminPage';
 
 // Common Modals & Auth
 import { QuickActionModal } from './components/common/QuickActionModal';
@@ -26,7 +27,7 @@ import { SearchModal } from './components/common/SearchModal';
 import { AuthPage } from './components/auth/AuthPage';
 
 const MainAppContent: React.FC = () => {
-  const { activeBottomTab, currentUser, isAuthReady } = useFinology();
+  const { activeBottomTab, currentUser, isAuthReady, isAdmin } = useFinology();
 
   if (!isAuthReady) {
     return (
@@ -44,7 +45,9 @@ const MainAppContent: React.FC = () => {
 
       <main className="flex-1 px-4 sm:px-6 py-4 space-y-6">
         {/* Route: Orçamentos */}
-        {activeBottomTab === 'budgets' ? (
+        {activeBottomTab === 'admin' && isAdmin ? (
+          <AdminPage />
+        ) : activeBottomTab === 'budgets' ? (
           <BudgetsScreen />
         ) : (
           /* Route: Início / Dashboard */
