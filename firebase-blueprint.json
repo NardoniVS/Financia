@@ -1,0 +1,154 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile",
+      "description": "User profile and preferences in Finology",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "accountLevel": { "type": "string", "enum": ["Pro", "Premium", "Gratuito"] },
+        "privacyMode": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "email", "createdAt"]
+    },
+    "transaction": {
+      "title": "Transaction",
+      "description": "Financial income, expense, transfer or investment transaction",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "subtitle": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 50 },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "type": { "type": "string", "enum": ["expense", "income", "investment", "transfer"] },
+        "paymentMethod": { "type": "string", "maxLength": 80 },
+        "status": { "type": "string", "enum": ["completed", "pending"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "category", "amount", "date", "type", "status"]
+    },
+    "budget": {
+      "title": "Budget",
+      "description": "Monthly category spending budget",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 50 },
+        "limit": { "type": "number" },
+        "spent": { "type": "number" },
+        "iconName": { "type": "string", "maxLength": 50 },
+        "color": { "type": "string", "maxLength": 30 },
+        "month": { "type": "string", "maxLength": 30 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "category", "limit", "spent", "month"]
+    },
+    "card": {
+      "title": "Bank Card",
+      "description": "User credit or debit card",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "bankName": { "type": "string", "maxLength": 80 },
+        "cardNumber": { "type": "string", "maxLength": 30 },
+        "cardHolderName": { "type": "string", "maxLength": 80 },
+        "expirationDate": { "type": "string", "maxLength": 10 },
+        "cvv": { "type": "string", "maxLength": 10 },
+        "cardBrand": { "type": "string", "enum": ["Mastercard", "Visa", "Elo"] },
+        "cardTier": { "type": "string", "maxLength": 30 },
+        "balanceOrLimit": { "type": "number" },
+        "availableLimit": { "type": "number" },
+        "isDefault": { "type": "boolean" },
+        "themeColor": { "type": "string", "enum": ["blue", "black", "purple", "emerald", "rose", "amber"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "bankName", "cardNumber", "cardHolderName", "expirationDate", "cardBrand", "themeColor"]
+    },
+    "connectedAccount": {
+      "title": "Connected Account",
+      "description": "Open Finance synced bank account",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "institutionName": { "type": "string", "maxLength": 80 },
+        "institutionCode": { "type": "string", "maxLength": 20 },
+        "accountType": { "type": "string", "enum": ["Corrente", "Poupança", "Investimentos", "Cartão de Crédito"] },
+        "balance": { "type": "number" },
+        "lastSync": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["connected", "syncing", "action_required"] },
+        "logoColor": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["userId", "institutionName", "institutionCode", "accountType", "balance", "status"]
+    },
+    "investmentAsset": {
+      "title": "Investment Asset",
+      "description": "Tracked portfolio asset (Stock, FII, Fixed income, Crypto)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "ticker": { "type": "string", "maxLength": 20 },
+        "name": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "enum": ["Ações", "Fundos Imobiliários", "Renda Fixa", "Cripto", "Internacional"] },
+        "currentPrice": { "type": "number" },
+        "changePercent": { "type": "number" },
+        "changeValue": { "type": "number" },
+        "quantity": { "type": "number" },
+        "averagePrice": { "type": "number" },
+        "dividendYield": { "type": "number" },
+        "peRatio": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "ticker", "name", "category", "currentPrice", "quantity", "averagePrice"]
+    },
+    "notification": {
+      "title": "Notification Item",
+      "description": "System or user alert notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 300 },
+        "timestamp": { "type": "string", "maxLength": 50 },
+        "read": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["dividend", "budget_alert", "subscription", "security", "transfer"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "description", "read", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "Root user profile document"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "transaction",
+      "description": "User financial transactions"
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": "budget",
+      "description": "Monthly budgets and category limits"
+    },
+    "/users/{userId}/cards/{cardId}": {
+      "schema": "card",
+      "description": "User bank cards"
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": "connectedAccount",
+      "description": "Open Finance connected bank accounts"
+    },
+    "/users/{userId}/assets/{assetId}": {
+      "schema": "investmentAsset",
+      "description": "Portfolio investment assets"
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "notification",
+      "description": "User alerts and notifications"
+    }
+  }
+}
