@@ -210,7 +210,7 @@ export const BudgetsScreen: React.FC = () => {
       {/* Spendings Donut Section */}
       <SpendingsDonut />
 
-      {/* Monthly Subscriptions Monitoring */}
+      {/* Monthly recurring bills */}
       <SubscriptionsSection />
 
       {/* Edit Budget Limit Modal */}

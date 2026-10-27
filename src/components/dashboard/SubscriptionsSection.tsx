@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Calendar, CheckCircle, CreditCard, Plus, Trash2, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, Calendar, CheckCircle, CreditCard, Plus, Trash2, X } from 'lucide-react';
 import { useFinology } from '../../context/FinologyContext';
 import { formatCurrency, formatDateShort } from '../../utils/formatters';
+import { disableWebPushNotifications, enableWebPushNotifications, hasActiveWebPushSubscription, webPushSupported } from '../../services/webPushService';
 
-const categories = ['Serviços & Assinaturas', 'Educação', 'Saúde', 'Lazer & Compras', 'Outros'];
+const categories = ['Moradia', 'Serviços & Assinaturas', 'Educação', 'Saúde', 'Lazer & Compras', 'Outros'];
 
 const getDefaultBillingDate = () => {
   const date = new Date();
@@ -22,15 +23,44 @@ export const SubscriptionsSection: React.FC = () => {
   const [category, setCategory] = useState(categories[0]);
   const [amount, setAmount] = useState('');
   const [nextBillingDate, setNextBillingDate] = useState(getDefaultBillingDate);
-  const [billingFrequency, setBillingFrequency] = useState<'mensal' | 'anual'>('mensal');
   const [brandColor, setBrandColor] = useState('#2563eb');
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    hasActiveWebPushSubscription()
+      .then((enabled) => { if (active) setPushEnabled(enabled); })
+      .catch(() => { if (active) setPushEnabled(false); });
+    return () => { active = false; };
+  }, []);
+
+  const togglePushNotifications = async () => {
+    setPushLoading(true);
+    setPushMessage('');
+    try {
+      if (pushEnabled) {
+        await disableWebPushNotifications();
+        setPushEnabled(false);
+        setPushMessage('Lembretes neste dispositivo desativados.');
+      } else {
+        await enableWebPushNotifications();
+        setPushEnabled(true);
+        setPushMessage('Este dispositivo receberá avisos um dia antes do vencimento.');
+      }
+    } catch (error) {
+      setPushMessage(error instanceof Error ? error.message : 'Não foi possível configurar as notificações.');
+    } finally {
+      setPushLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setServiceName('');
     setCategory(categories[0]);
     setAmount('');
     setNextBillingDate(getDefaultBillingDate());
-    setBillingFrequency('mensal');
     setBrandColor('#2563eb');
   };
 
@@ -49,7 +79,7 @@ export const SubscriptionsSection: React.FC = () => {
       category,
       amount: parsedAmount,
       nextBillingDate,
-      billingFrequency,
+      billingFrequency: 'mensal',
       status: 'active',
       brandColor,
       isPaidThisMonth: false,
@@ -62,22 +92,40 @@ export const SubscriptionsSection: React.FC = () => {
       <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">Assinaturas</h2>
-            <span className="text-xs text-slate-400 dark:text-slate-500">Pagamentos recorrentes monitorados</span>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Contas Recorrentes</h2>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Contas com valor fixo mensal e lembrete de vencimento</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsAddOpen(true)}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            Adicionar
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={togglePushNotifications}
+              disabled={pushLoading || !webPushSupported()}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Bell className="h-4 w-4" />
+              {pushLoading ? 'Configurando…' : pushEnabled ? 'Desativar lembretes' : 'Ativar notificações'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAddOpen(true)}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar
+            </button>
+          </div>
         </div>
+
+        {pushMessage && <p role="status" className="mb-3 text-xs text-slate-500 dark:text-slate-400">{pushMessage}</p>}
+        {!webPushSupported() && (
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            Notificações externas exigem HTTPS e navegador compatível. No iPhone ou iPad, adicione o site à Tela de Início.
+          </p>
+        )}
 
         {subscriptions.length === 0 ? (
           <p className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-            Nenhuma assinatura cadastrada. Toque em “Adicionar” para começar.
+            Nenhuma conta recorrente cadastrada. Toque em “Adicionar” para começar.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -111,7 +159,7 @@ export const SubscriptionsSection: React.FC = () => {
                   <div className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                     <Calendar className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate">
-                      Próxima cobrança: {formatDateShort(subscription.nextBillingDate)} · {subscription.billingFrequency}
+                      Próximo vencimento: {formatDateShort(subscription.nextBillingDate)} · {subscription.billingFrequency}
                     </span>
                   </div>
                 </div>
@@ -134,12 +182,12 @@ export const SubscriptionsSection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm(`Remover a assinatura ${subscription.serviceName}?`)) {
+                    if (window.confirm(`Remover a conta recorrente ${subscription.serviceName}?`)) {
                       deleteSubscription(subscription.id);
                     }
                   }}
                   className="mt-2 inline-flex min-h-9 items-center justify-center gap-1 rounded-xl px-2 text-[11px] font-semibold text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
-                  aria-label={`Remover assinatura ${subscription.serviceName}`}
+                  aria-label={`Remover conta recorrente ${subscription.serviceName}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Remover
@@ -164,7 +212,7 @@ export const SubscriptionsSection: React.FC = () => {
           >
             <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h2 id="add-subscription-title" className="text-base font-bold text-slate-900 dark:text-white">
-                Cadastrar assinatura
+                Cadastrar conta recorrente
               </h2>
               <button
                 type="button"
@@ -208,14 +256,9 @@ export const SubscriptionsSection: React.FC = () => {
                 </label>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Frequência
-                  <select
-                    value={billingFrequency}
-                    onChange={(event) => setBillingFrequency(event.target.value as 'mensal' | 'anual')}
-                    className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  >
-                    <option value="mensal">Mensal</option>
-                    <option value="anual">Anual</option>
-                  </select>
+                  <span className="mt-1.5 flex min-h-11 items-center rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    Mensal (valor fixo)
+                  </span>
                 </label>
               </div>
 
@@ -265,7 +308,7 @@ export const SubscriptionsSection: React.FC = () => {
                   type="submit"
                   className="min-h-11 flex-1 rounded-xl bg-blue-600 text-xs font-bold text-white transition-colors hover:bg-blue-700"
                 >
-                  Salvar assinatura
+                  Salvar conta
                 </button>
               </div>
             </form>

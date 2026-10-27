@@ -29,6 +29,8 @@ No PowerShell do Windows, use os sufixos `.cmd` acima para evitar bloqueios de e
 
 Encontre o `project-ref` no painel do projeto Supabase. A função valida a sessão autenticada e usa as variáveis padrão `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Edge; a chave administrativa não deve ser colocada no app web.
 
+Veja o passo a passo para habilitar lembretes fora do app em [`docs/web-push-setup.md`](docs/web-push-setup.md).
+
 ## Rodar localmente
 
 **Pré-requisito:** Node.js

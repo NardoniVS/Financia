@@ -14,6 +14,18 @@ import {
   NotificationItem,
 } from '../types/finology';
 
+const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getCalendarDayNumber = (dateKey: string) => {
+  const [year, month, day] = dateKey.slice(0, 10).split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / 86_400_000;
+};
+
 interface FinologyContextType {
   // Theme & App Settings
   theme: 'light' | 'dark';
@@ -247,6 +259,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [assets, setAssets] = useState<InvestmentAsset[]>([]);
   const [marketIndices] = useState<MarketIndex[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [todayDateKey, setTodayDateKey] = useState(() => getLocalDateKey(new Date()));
 
   // Selection & Modals
   const [selectedAsset, setSelectedAsset] = useState<InvestmentAsset | null>(null);
@@ -258,6 +271,35 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isAddBudgetOpen, setIsAddBudgetOpen] = useState(false);
   const [isConnectBankModalOpen, setIsConnectBankModalOpen] = useState(false);
   const [isSyncingAccount, setIsSyncingAccount] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const nextDateKey = getLocalDateKey(new Date());
+      setTodayDateKey((current) => current === nextDateKey ? current : nextDateKey);
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const today = getCalendarDayNumber(todayDateKey);
+    setNotifications((current) => {
+      const existingById = new Map(current.map((notification) => [notification.id, notification]));
+      const reminders = subscriptions
+        .filter((item) => item.status === 'active' && !item.isPaidThisMonth && getCalendarDayNumber(item.nextBillingDate) - today === 1)
+        .map((item): NotificationItem => {
+          const id = `subscription-due-${item.id}-${item.nextBillingDate}`;
+          return existingById.get(id) ?? {
+            id,
+            title: 'Conta vence amanhã',
+            description: `${item.serviceName} vence em ${item.nextBillingDate.slice(0, 10).split('-').reverse().join('/')}.`,
+            timestamp: 'Lembrete',
+            read: false,
+            type: 'subscription',
+          };
+        });
+      return [...reminders, ...current.filter((notification) => notification.type !== 'subscription')];
+    });
+  }, [subscriptions, todayDateKey]);
 
   // Listen to Supabase Auth state.
   useEffect(() => {
@@ -684,7 +726,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!sub || sub.isPaidThisMonth) return;
 
     addTransaction({
-      title: `Assinatura: ${sub.serviceName}`,
+      title: `Conta recorrente: ${sub.serviceName}`,
       subtitle: 'Pagamento mensal automático',
       category: 'Serviços & Assinaturas',
       amount: -sub.amount,

@@ -1,0 +1,13 @@
+{
+  "name": "Finology - Gestão Financeira",
+  "short_name": "Finology",
+  "description": "Controle suas contas recorrentes e finanças pessoais.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/assets/finology-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
