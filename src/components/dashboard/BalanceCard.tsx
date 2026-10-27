@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { lazy, Suspense, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowUpRight, ArrowDownLeft, ChevronDown, PlusCircle } from 'lucide-react';
 import { useFinology } from '../../context/FinologyContext';
 import { formatCurrency } from '../../utils/formatters';
-import { RechartsBalanceLine, BalancePoint } from './RechartsBalanceLine';
+import type { BalancePoint } from './RechartsBalanceLine';
+
+const RechartsBalanceLine = lazy(() => import('./RechartsBalanceLine').then((module) => ({ default: module.RechartsBalanceLine })));
 
 export const BalanceCard: React.FC = () => {
   const {
@@ -86,9 +88,9 @@ export const BalanceCard: React.FC = () => {
       </div>
 
       {/* Top Header inside Card */}
-      <div className="relative z-10 flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-blue-100 uppercase tracking-wider">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="max-w-[170px] text-[10px] leading-tight font-medium text-blue-100 uppercase tracking-wider sm:max-w-none sm:text-xs">
             {hoveredPoint ? 'Ponto Selecionado' : 'Saldo Total Disponível'}
           </span>
         </div>
@@ -163,11 +165,13 @@ export const BalanceCard: React.FC = () => {
 
       {/* Interactive Recharts Line Graph with Touch/Hover Tooltip */}
       <div className="relative z-10 my-2 -mx-2">
-        <RechartsBalanceLine
-          data={currentData}
-          privacyMode={privacyMode}
-          onHoverPoint={(pt) => setHoveredPoint(pt)}
-        />
+        <Suspense fallback={<div className="h-[120px] w-full animate-pulse rounded-xl bg-white/10" aria-label="Carregando gráfico" />}>
+          <RechartsBalanceLine
+            data={currentData}
+            privacyMode={privacyMode}
+            onHoverPoint={(pt) => setHoveredPoint(pt)}
+          />
+        </Suspense>
       </div>
 
       {/* Bottom Summary Bar with mini metrics */}

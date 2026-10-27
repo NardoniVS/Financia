@@ -78,7 +78,7 @@ export const BudgetsScreen: React.FC = () => {
     <div className="space-y-5 pb-6">
       {/* Monthly Budget High-Level Overview */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
             <PieChart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
@@ -98,7 +98,7 @@ export const BudgetsScreen: React.FC = () => {
 
         {/* Global Progress */}
         <div className="my-3">
-          <div className="flex justify-between items-baseline mb-1 text-xs">
+          <div className="flex flex-col gap-1 mb-1 text-xs sm:flex-row sm:justify-between sm:items-baseline">
             <span className="font-semibold text-slate-500">
               Total Gasto: <strong className="text-slate-900 dark:text-white">{privacyMode ? '••••' : formatCurrency(totalSpent)}</strong>
             </span>
@@ -222,7 +222,7 @@ export const BudgetsScreen: React.FC = () => {
           onClick={() => setSelectedBudget(null)}
         >
           <div
-            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-100 dark:border-slate-800"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">
@@ -273,7 +273,7 @@ export const BudgetsScreen: React.FC = () => {
           onClick={() => setIsAddOpen(false)}
         >
           <div
-            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-100 dark:border-slate-800"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">

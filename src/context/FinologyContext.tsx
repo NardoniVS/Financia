@@ -65,6 +65,8 @@ interface FinologyContextType {
 
   // Subscriptions
   subscriptions: Subscription[];
+  addSubscription: (subscription: Omit<Subscription, 'id'>) => void;
+  deleteSubscription: (id: string) => void;
   paySubscription: (id: string) => void;
 
   // Investments
@@ -266,6 +268,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCards([]);
         setConnectedAccounts([]);
         setBudgets([]);
+        setSubscriptions([]);
         setAssets([]);
         setNotifications([]);
         setSelectedAsset(null);
@@ -309,6 +312,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const unsubBudgets = supabaseService.subscribeBudgets(currentUser.id, setBudgets);
     const unsubAccounts = supabaseService.subscribeAccounts(currentUser.id, setConnectedAccounts);
     const unsubAssets = supabaseService.subscribeAssets(currentUser.id, setAssets);
+    const unsubSubscriptions = supabaseService.subscribeSubscriptions(currentUser.id, setSubscriptions);
 
     return () => {
       unsubTx();
@@ -316,6 +320,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       unsubBudgets();
       unsubAccounts();
       unsubAssets();
+      unsubSubscriptions();
     };
   }, [currentUser]);
 
@@ -548,6 +553,24 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const addSubscription = (subscription: Omit<Subscription, 'id'>) => {
+    const newSubscription: Subscription = {
+      ...subscription,
+      id: `sub-${Date.now()}`,
+    };
+    setSubscriptions(prev => [...prev, newSubscription]);
+    if (currentUser) {
+      void supabaseService.addSubscription(currentUser.id, newSubscription);
+    }
+  };
+
+  const deleteSubscription = (id: string) => {
+    setSubscriptions(prev => prev.filter(subscription => subscription.id !== id));
+    if (currentUser) {
+      void supabaseService.deleteSubscription(currentUser.id, id);
+    }
+  };
+
   const paySubscription = (id: string) => {
     const sub = subscriptions.find(s => s.id === id);
     if (!sub || sub.isPaidThisMonth) return;
@@ -563,9 +586,12 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'completed',
     });
 
-    setSubscriptions(prev =>
-      prev.map(s => (s.id === id ? { ...s, isPaidThisMonth: true } : s))
-    );
+    setSubscriptions(prev => prev.map((subscription) => {
+      if (subscription.id !== id) return subscription;
+      const updated = { ...subscription, isPaidThisMonth: true };
+      if (currentUser) void supabaseService.updateSubscription(currentUser.id, updated);
+      return updated;
+    }));
   };
 
   const tradeAsset = (assetId: string, quantity: number, type: 'buy' | 'sell'): boolean => {
@@ -669,6 +695,8 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addBudget,
         updateBudgetLimit,
         subscriptions,
+        addSubscription,
+        deleteSubscription,
         paySubscription,
         assets,
         marketIndices,

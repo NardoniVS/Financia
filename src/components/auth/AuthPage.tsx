@@ -126,7 +126,7 @@ export const AuthPage: React.FC = () => {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     placeholder="Seu nome"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-4 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                   />
                 </span>
               </label>
@@ -143,7 +143,7 @@ export const AuthPage: React.FC = () => {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="voce@exemplo.com"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-4 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                 />
               </span>
             </label>
@@ -160,7 +160,7 @@ export const AuthPage: React.FC = () => {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Mínimo de 6 caracteres"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-12 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-12 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                 />
                 <button
                   type="button"

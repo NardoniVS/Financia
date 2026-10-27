@@ -30,7 +30,7 @@ export const SearchModal: React.FC = () => {
       onClick={() => setIsSearchOpen(false)}
     >
       <div
-        className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-slate-100"
+        className="bg-white w-full max-w-md max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl border border-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative mb-4">
@@ -41,12 +41,12 @@ export const SearchModal: React.FC = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por despesas, receitas ou categorias..."
-            className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-100 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-100 text-base font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
           />
           <button
             type="button"
             onClick={() => setIsSearchOpen(false)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+            className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

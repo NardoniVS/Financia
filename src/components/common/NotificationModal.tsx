@@ -34,7 +34,7 @@ export const NotificationModal: React.FC = () => {
       onClick={() => setIsNotificationOpen(false)}
     >
       <div
-        className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-slate-100 dark:border-slate-800"
+        className="bg-white dark:bg-slate-900 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl border border-slate-100 dark:border-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
@@ -47,7 +47,7 @@ export const NotificationModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsNotificationOpen(false)}
-            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>

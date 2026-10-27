@@ -6,10 +6,11 @@ import {
   ConnectedAccount,
   Budget,
   InvestmentAsset,
+  Subscription,
   UserProfile,
 } from '../types/finology';
 
-type CollectionName = 'transactions' | 'cards' | 'budgets' | 'accounts' | 'assets';
+type CollectionName = 'transactions' | 'cards' | 'budgets' | 'accounts' | 'assets' | 'subscriptions';
 
 const toDatabaseRow = (value: Record<string, unknown>) => {
   const row: Record<string, unknown> = {};
@@ -116,6 +117,8 @@ export const supabaseService = {
     subscribeRows('accounts', userId, callback),
   subscribeAssets: (userId: string, callback: (rows: InvestmentAsset[]) => void) =>
     subscribeRows('assets', userId, callback),
+  subscribeSubscriptions: (userId: string, callback: (rows: Subscription[]) => void) =>
+    subscribeRows('subscriptions', userId, callback),
 
   async addTransaction(userId: string, transaction: Transaction): Promise<void> {
     await upsertRows('transactions', userId, [transaction as unknown as Record<string, unknown>]);
@@ -139,5 +142,19 @@ export const supabaseService = {
   },
   async updateAsset(userId: string, asset: InvestmentAsset): Promise<void> {
     await upsertRows('assets', userId, [asset as unknown as Record<string, unknown>]);
+  },
+  async addSubscription(userId: string, subscription: Subscription): Promise<void> {
+    await upsertRows('subscriptions', userId, [subscription as unknown as Record<string, unknown>]);
+  },
+  async updateSubscription(userId: string, subscription: Subscription): Promise<void> {
+    await upsertRows('subscriptions', userId, [subscription as unknown as Record<string, unknown>]);
+  },
+  async deleteSubscription(userId: string, subscriptionId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', userId)
+      .eq('id', subscriptionId);
+    ensureSuccess(error);
   },
 };

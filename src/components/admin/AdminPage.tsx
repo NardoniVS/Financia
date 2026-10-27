@@ -172,7 +172,7 @@ export const AdminPage: React.FC = () => {
             if (event.target === event.currentTarget && !deleting) setSelectedProfile(null);
           }}
         >
-          <div role="dialog" aria-modal="true" aria-labelledby="delete-financial-data-title" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-financial-data-title" className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">

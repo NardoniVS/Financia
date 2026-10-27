@@ -5,7 +5,6 @@ import {
   Eye,
   EyeOff,
   LogOut,
-  Database,
   Sun,
   Moon,
   Monitor,
@@ -36,7 +35,7 @@ export const TopHeader: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="w-full pt-4 pb-3 px-4 sm:px-6">
+    <header className="w-full pt-[calc(1rem+env(safe-area-inset-top))] pb-3 px-4 sm:px-6 sm:pt-4">
       {/* Upper Controls Row */}
       <div className="flex items-center justify-between gap-3 mb-4">
         {/* User Greeting & Avatar with Profile Menu */}
@@ -81,10 +80,6 @@ export const TopHeader: React.FC = () => {
                 </div>
                 <div className="text-[11px] text-slate-400 truncate">
                   {userProfile.email}
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">
-                  <Database className="w-3 h-3" />
-                  <span>{isAuthenticated ? 'Supabase conectado' : 'Entre para sincronizar seus dados'}</span>
                 </div>
               </div>
 
@@ -169,13 +164,13 @@ export const TopHeader: React.FC = () => {
         </div>
 
         {/* Action Icons */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
           {/* Privacy Toggle */}
           <button
             type="button"
             onClick={togglePrivacyMode}
             title={privacyMode ? "Mostrar valores" : "Ocultar valores sensíveis"}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Alternar privacidade de saldo"
           >
             {privacyMode ? <EyeOff className="w-4 h-4 text-amber-500" /> : <Eye className="w-4 h-4" />}
@@ -190,7 +185,7 @@ export const TopHeader: React.FC = () => {
                 ? 'Mudar para modo claro (Atualmente no modo escuro)'
                 : 'Mudar para modo escuro (Atualmente no modo claro)'
             }
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Alternar tema claro e escuro"
           >
             {theme === 'dark' ? (
@@ -205,7 +200,7 @@ export const TopHeader: React.FC = () => {
             type="button"
             onClick={() => setIsSearchOpen(true)}
             title="Buscar transações, ações ou categorias"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Buscar no Finology"
           >
             <Search className="w-4 h-4" />
@@ -216,7 +211,7 @@ export const TopHeader: React.FC = () => {
             type="button"
             onClick={() => setIsNotificationOpen(true)}
             title="Ver notificações"
-            className="relative w-9 h-9 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="relative w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Notificações"
           >
             <Bell className="w-4 h-4" />

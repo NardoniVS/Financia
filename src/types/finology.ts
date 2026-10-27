@@ -12,8 +12,16 @@ export type CategoryType =
   | 'Saúde'
   | 'Educação'
   | 'Trabalho / Salário'
+  | 'Freelance'
+  | 'Vendas'
+  | 'Reembolso'
+  | 'Benefícios'
   | 'Investimentos'
   | 'Serviços & Assinaturas'
+  | 'Cuidados pessoais'
+  | 'Pets'
+  | 'Viagens'
+  | 'Impostos & Taxas'
   | 'Outros';
 
 export interface Transaction {

@@ -47,6 +47,7 @@ export const RechartsBalanceLine: React.FC<RechartsBalanceLineProps> = ({
       <ResponsiveContainer width="100%" height="100%" minHeight={90}>
         <AreaChart
           data={data}
+          className="outline-none focus:outline-none focus-visible:outline-none [&_.recharts-surface:focus]:!outline-none"
           margin={{ top: 12, right: 6, left: 6, bottom: 0 }}
           onMouseMove={(e: any) => {
             if (e?.activePayload && e.activePayload.length > 0 && onHoverPoint) {

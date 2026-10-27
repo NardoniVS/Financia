@@ -9,6 +9,28 @@ interface SpendingCategory {
   percent: number;
 }
 
+const categoryColors: Record<string, string> = {
+  'Alimentação': '#3B82F6',
+  'Lazer & Compras': '#EC4899',
+  'Transporte': '#10B981',
+  'Saúde': '#F59E0B',
+  'Serviços & Assinaturas': '#8B5CF6',
+  'Moradia': '#06B6D4',
+  'Educação': '#F97316',
+  'Cuidados pessoais': '#D946EF',
+  'Pets': '#84CC16',
+  'Viagens': '#14B8A6',
+  'Impostos & Taxas': '#EF4444',
+  'Outros': '#94A3B8',
+};
+
+const getCategoryColor = (category: string) => {
+  if (categoryColors[category]) return categoryColors[category];
+
+  const hash = Array.from(category).reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 0);
+  return `hsl(${hash % 360}, 72%, 62%)`;
+};
+
 export const SpendingsDonut: React.FC = () => {
   const { transactions, privacyMode } = useFinology();
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
@@ -17,34 +39,27 @@ export const SpendingsDonut: React.FC = () => {
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
   const totalExpense = expenseTransactions.reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
-  const categoryMap: { [key: string]: { amount: number; color: string } } = {
-    'Alimentação': { amount: 0, color: '#3B82F6' },
-    'Lazer & Compras': { amount: 0, color: '#EC4899' },
-    'Transporte': { amount: 0, color: '#10B981' },
-    'Saúde': { amount: 0, color: '#F59E0B' },
-    'Serviços & Assinaturas': { amount: 0, color: '#8B5CF6' },
-  };
-
-  expenseTransactions.forEach(t => {
-    if (categoryMap[t.category]) {
-      categoryMap[t.category].amount += Math.abs(t.amount);
-    } else {
-      categoryMap['Lazer & Compras'].amount += Math.abs(t.amount);
-    }
+  const categoryTotals = new Map<string, number>();
+  expenseTransactions.forEach((transaction) => {
+    categoryTotals.set(
+      transaction.category,
+      (categoryTotals.get(transaction.category) ?? 0) + Math.abs(transaction.amount),
+    );
   });
 
-  const categories: SpendingCategory[] = Object.keys(categoryMap).map(cat => ({
-    category: cat,
-    amount: categoryMap[cat].amount,
-    color: categoryMap[cat].color,
-    percent: totalExpense > 0 ? Math.round((categoryMap[cat].amount / totalExpense) * 100) : 0,
-  })).filter(c => c.amount > 0);
+  const categories: SpendingCategory[] = Array.from(categoryTotals, ([category, amount]) => ({
+    category,
+    amount,
+    color: getCategoryColor(category),
+    percent: totalExpense > 0 ? (amount / totalExpense) * 100 : 0,
+  })).sort((a, b) => b.amount - a.amount);
 
   // SVG Donut calculation
   const size = 160;
   const strokeWidth = 16;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+  const segmentGap = 3;
 
   let accumulatedPercent = 0;
 
@@ -64,9 +79,19 @@ export const SpendingsDonut: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center gap-6 justify-center">
         {/* SVG Donut */}
         <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
-          <svg className="w-full h-full transform -rotate-90">
+          <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90 overflow-visible">
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="transparent"
+              stroke="currentColor"
+              strokeWidth={strokeWidth}
+              className="text-slate-100 dark:text-slate-800"
+            />
             {categories.map((cat) => {
-              const strokeDasharray = `${(cat.percent / 100) * circumference} ${circumference}`;
+              const arcLength = (cat.percent / 100) * circumference;
+              const strokeDasharray = `${Math.max(0, arcLength - segmentGap)} ${circumference}`;
               const strokeDashoffset = -((accumulatedPercent / 100) * circumference);
               accumulatedPercent += cat.percent;
 
@@ -80,11 +105,12 @@ export const SpendingsDonut: React.FC = () => {
                   r={radius}
                   fill="transparent"
                   stroke={cat.color}
-                  strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
+                  strokeWidth={isHovered ? strokeWidth + 2 : strokeWidth}
                   strokeDasharray={strokeDasharray}
                   strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  className="transition-all duration-300 cursor-pointer"
+                  strokeLinecap="butt"
+                  opacity={hoveredCategory && !isHovered ? 0.55 : 1}
+                  className="cursor-pointer transition-[stroke-width,opacity] duration-150 ease-out"
                   onMouseEnter={() => setHoveredCategory(cat.category)}
                   onMouseLeave={() => setHoveredCategory(null)}
                 />
@@ -113,7 +139,7 @@ export const SpendingsDonut: React.FC = () => {
         </div>
 
         {/* Legend / Breakdown List */}
-        <div className="flex-1 w-full space-y-2">
+        <div className="min-w-0 flex-1 w-full space-y-2">
           {categories.map((cat) => (
             <div
               key={cat.category}
@@ -125,17 +151,17 @@ export const SpendingsDonut: React.FC = () => {
                   : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: cat.color }}
                 />
-                <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[130px]">
+                <span className="min-w-0 flex-1 font-medium text-slate-700 dark:text-slate-300 truncate sm:max-w-[130px]">
                   {cat.category}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-mono text-[11px]">{cat.percent}%</span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-slate-400 font-mono text-[11px]">{Math.round(cat.percent)}%</span>
                 <span className="font-bold text-slate-900 dark:text-white tabular-nums">
                   {privacyMode ? '•••' : formatCurrency(cat.amount)}
                 </span>

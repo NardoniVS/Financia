@@ -11,7 +11,7 @@ export const BottomNav: React.FC = () => {
 
   return (
     <nav
-      className="sticky bottom-0 z-30 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 px-4 py-2 transition-colors"
+      className="sticky bottom-0 z-30 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] transition-colors"
       aria-label="Navegação Principal"
     >
       <div className="max-w-md mx-auto grid grid-cols-3 items-center justify-items-center">
