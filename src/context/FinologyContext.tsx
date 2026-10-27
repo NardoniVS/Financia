@@ -340,8 +340,12 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (error) throw error;
     } catch (err: any) {
       console.error('Google Sign In Error:', err);
-      setAuthError(err?.message || 'Falha ao autenticar com o Google.');
-      throw err;
+      const message = String(err?.message ?? '');
+      const friendlyMessage = /unsupported provider|provider is not enabled/i.test(message)
+        ? 'O login com Google ainda não está habilitado no Supabase. Ative o provedor Google em Authentication → Sign In / Providers e configure as credenciais OAuth.'
+        : message || 'Falha ao autenticar com o Google.';
+      setAuthError(friendlyMessage);
+      throw new Error(friendlyMessage);
     }
   };
 
