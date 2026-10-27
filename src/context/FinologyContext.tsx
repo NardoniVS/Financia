@@ -375,7 +375,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const message = String(err?.message ?? '');
       const friendlyMessage = /unsupported provider|provider is not enabled/i.test(message)
         ? 'O login com Google ainda não está habilitado no Supabase. Ative o provedor Google em Authentication → Sign In / Providers e configure as credenciais OAuth.'
-        : message || 'Falha ao autenticar com o Google.';
+        : 'Não foi possível conectar com o Google. Tente novamente.';
       setAuthError(friendlyMessage);
       throw new Error(friendlyMessage);
     }
@@ -387,8 +387,11 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const { error } = await getSupabase().auth.signInWithPassword({ email, password: pass });
       if (error) throw error;
     } catch (err: any) {
-      setAuthError('Email ou senha incorretos.');
-      throw err;
+      const message = /invalid login credentials/i.test(String(err?.message ?? ''))
+        ? 'E-mail ou senha incorretos.'
+        : 'Não foi possível entrar. Confira os dados e tente novamente.';
+      setAuthError(message);
+      throw new Error(message);
     }
   };
 
@@ -397,13 +400,19 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
       redirectTo: getAuthRedirectUrl(),
     });
-    if (error) throw error;
+    if (error) {
+      setAuthError('Não foi possível enviar o link agora. Tente novamente mais tarde.');
+      throw new Error('Não foi possível enviar o link agora. Tente novamente mais tarde.');
+    }
   };
 
   const updatePassword = async (password: string) => {
     setAuthError(null);
     const { error } = await getSupabase().auth.updateUser({ password });
-    if (error) throw error;
+    if (error) {
+      setAuthError('Não foi possível atualizar a senha. Confira os requisitos e tente novamente.');
+      throw new Error('Não foi possível atualizar a senha. Confira os requisitos e tente novamente.');
+    }
     setIsPasswordRecovery(false);
     await getSupabase().auth.signOut();
   };
@@ -461,8 +470,14 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (error) throw error;
       return Boolean(data.session);
     } catch (err: any) {
-      setAuthError(err?.message || 'Erro ao registrar usuário.');
-      throw err;
+      const providerMessage = String(err?.message ?? '');
+      const message = /password.*(weak|short|least|length)|weak password/i.test(providerMessage)
+        ? 'A senha não atende aos requisitos definidos. Escolha outra senha.'
+        : /already registered|user exists/i.test(providerMessage)
+          ? 'Já existe uma conta com esse e-mail.'
+          : 'Não foi possível criar a conta. Confira os dados e tente novamente.';
+      setAuthError(message);
+      throw new Error(message);
     }
   };
 

@@ -36,7 +36,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ onCl
         ? 'Perfil atualizado. Confirme as mensagens de verificação enviadas para concluir a troca de e-mail.'
         : 'Perfil atualizado com sucesso.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível atualizar o perfil.');
+      setError('Não foi possível atualizar o perfil. Confira os dados e tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -61,7 +61,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ onCl
       await uploadProfileAvatar(file);
       setNotice('Foto de perfil atualizada.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível enviar a foto.');
+      setError('Não foi possível enviar a foto. Confira o arquivo e tente novamente.');
     } finally {
       setUploading(false);
     }
@@ -75,7 +75,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ onCl
       await deleteAccount();
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível excluir a conta.');
+      setError('Não foi possível excluir a conta. Tente novamente mais tarde.');
       setDeleting(false);
     }
   };

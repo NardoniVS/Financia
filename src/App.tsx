@@ -70,7 +70,7 @@ const MainAppContent: React.FC = () => {
             <div className="grid min-w-0 grid-cols-1 lg:grid-cols-2 gap-6 items-start">
               <div className="min-w-0 space-y-6">
                 <BalanceCard />
-                <TransactionsList limit={5} />
+                <TransactionsList limit={0} />
               </div>
               <div className="min-w-0 space-y-6">
                 <BudgetsPreview />

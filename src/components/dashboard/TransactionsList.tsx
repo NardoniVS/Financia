@@ -104,7 +104,7 @@ export const TransactionsList: React.FC<{ limit?: number }> = ({ limit = 5 }) =>
           Nenhuma transação encontrada no filtro selecionado.
         </div>
       ) : (
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="max-h-[min(55vh,28rem)] overflow-y-auto overscroll-contain pr-1 divide-y divide-slate-100 dark:divide-slate-800">
           {displayList.map((tx) => {
             const { icon: Icon, bg } = getCategoryIcon(tx.category);
             const isPositive = tx.amount > 0;
