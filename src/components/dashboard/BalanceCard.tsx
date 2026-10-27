@@ -18,6 +18,7 @@ export const BalanceCard: React.FC = () => {
   } = useFinology();
 
   const [selectedPeriod, setSelectedPeriod] = useState<'Mês atual' | 'Mês anterior' | 'Tudo'>('Mês atual');
+  const [grouping, setGrouping] = useState<'day' | 'month'>('day');
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const [periodMenuPosition, setPeriodMenuPosition] = useState({ top: 0, right: 0 });
   const [hoveredPoint, setHoveredPoint] = useState<BalancePoint | null>(null);
@@ -39,39 +40,65 @@ export const BalanceCard: React.FC = () => {
         : null;
 
     const datedTransactions = transactions
-      .map((transaction) => ({ transaction, date: new Date(transaction.date) }))
+      .map((transaction) => ({
+        transaction,
+        date: /^\d{4}-\d{2}-\d{2}$/.test(transaction.date)
+          ? new Date(`${transaction.date}T00:00:00`)
+          : new Date(transaction.date),
+      }))
       .filter(({ date }) => !Number.isNaN(date.getTime()));
+    if (datedTransactions.length === 0) return [];
     const periodTransactions = datedTransactions
       .filter(({ date }) => (!start || date >= start) && (!end || date < end))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-    if (periodTransactions.length === 0) return [];
 
     const changesSincePeriodStart = datedTransactions
       .filter(({ date }) => !start || date >= start)
       .reduce((sum, { transaction }) => sum + transaction.amount, 0);
     let runningBalance = totalBalance - changesSincePeriodStart;
-    const dailyFlows = new Map<string, { date: Date; flow: number }>();
+    const groupedFlows = new Map<string, { date: Date; flow: number }>();
 
     for (const { transaction, date } of periodTransactions) {
-      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      const day = dailyFlows.get(dayKey) ?? { date, flow: 0 };
-      day.flow += transaction.amount;
-      dailyFlows.set(dayKey, day);
+      const key = grouping === 'day'
+        ? `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+        : `${date.getFullYear()}-${date.getMonth()}`;
+      const bucketDate = grouping === 'day' ? date : new Date(date.getFullYear(), date.getMonth(), 1);
+      const bucket = groupedFlows.get(key) ?? { date: bucketDate, flow: 0 };
+      bucket.flow += transaction.amount;
+      groupedFlows.set(key, bucket);
     }
 
-    return Array.from(dailyFlows.values())
+    if (grouping === 'day') {
+      const firstTransaction = periodTransactions[0]?.date ?? datedTransactions[0].date;
+      const rangeStart = start
+        ? new Date(start)
+        : new Date(firstTransaction.getFullYear(), firstTransaction.getMonth(), 1);
+      rangeStart.setHours(0, 0, 0, 0);
+      const rangeEnd = new Date();
+      rangeEnd.setHours(0, 0, 0, 0);
+      if (end && end <= rangeEnd) rangeEnd.setTime(end.getTime() - 1);
+      rangeEnd.setHours(0, 0, 0, 0);
+      const dailyPoints: { date: Date; flow: number }[] = [];
+      for (const day = new Date(rangeStart); day <= rangeEnd; day.setDate(day.getDate() + 1)) {
+        const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+        dailyPoints.push({ date: new Date(day), flow: groupedFlows.get(key)?.flow ?? 0 });
+      }
+      groupedFlows.clear();
+      dailyPoints.forEach((point, index) => groupedFlows.set(String(index), point));
+    }
+
+    return Array.from(groupedFlows.values())
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .map(({ date, flow }) => {
         runningBalance += flow;
         return {
-          date: new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date).replace('.', ''),
-          fullDate: new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(date),
+          date: new Intl.DateTimeFormat('pt-BR', grouping === 'day' ? { day: '2-digit', month: 'short' } : { month: 'short', year: '2-digit' }).format(date).replace('.', ''),
+          fullDate: new Intl.DateTimeFormat('pt-BR', grouping === 'day' ? { dateStyle: 'long' } : { month: 'long', year: 'numeric' }).format(date),
           balance: runningBalance,
           flow,
         };
       });
-  }, [selectedPeriod, totalBalance, transactions]);
+  }, [grouping, selectedPeriod, totalBalance, transactions]);
 
   // If user is hovering a specific point, reflect that value in the header
   const displayBalance = hoveredPoint ? hoveredPoint.balance : totalBalance;
@@ -165,6 +192,12 @@ export const BalanceCard: React.FC = () => {
 
       {/* Interactive Recharts Line Graph with Touch/Hover Tooltip */}
       <div className="relative z-10 my-2 -mx-2">
+        <div className="mb-1 flex justify-end px-2">
+          <div className="inline-flex rounded-lg bg-slate-950/20 p-0.5" role="group" aria-label="Agrupar gráfico por">
+            <button type="button" aria-pressed={grouping === 'day'} onClick={() => { setGrouping('day'); setHoveredPoint(null); }} className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${grouping === 'day' ? 'bg-white/20 text-white' : 'text-blue-100/70 hover:text-white'}`}>Dia</button>
+            <button type="button" aria-pressed={grouping === 'month'} onClick={() => { setGrouping('month'); setHoveredPoint(null); }} className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${grouping === 'month' ? 'bg-white/20 text-white' : 'text-blue-100/70 hover:text-white'}`}>Mês</button>
+          </div>
+        </div>
         <Suspense fallback={<div className="h-[120px] w-full animate-pulse rounded-xl bg-white/10" aria-label="Carregando gráfico" />}>
           <RechartsBalanceLine
             data={currentData}

@@ -11,10 +11,11 @@ import {
 import { useFinology } from '../../context/FinologyContext';
 
 export const AuthPage: React.FC = () => {
-  const { loginWithGoogle, loginWithEmail, registerWithEmail, authError } = useFinology();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const { loginWithGoogle, loginWithEmail, registerWithEmail, sendPasswordReset, updatePassword, isPasswordRecovery, authError } = useFinology();
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'recover'>(isPasswordRecovery ? 'recover' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +27,13 @@ export const AuthPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      if (mode === 'login') {
+      if (mode === 'forgot') {
+        await sendPasswordReset(email);
+        setLocalError('Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.');
+      } else if (mode === 'recover') {
+        if (password !== confirmPassword) throw new Error('As senhas não coincidem.');
+        await updatePassword(password);
+      } else if (mode === 'login') {
         await loginWithEmail(email, password);
       } else {
         const signedIn = await registerWithEmail(name, email, password);
@@ -83,14 +90,14 @@ export const AuthPage: React.FC = () => {
           <div className="mb-4">
             <p className="text-sm font-semibold text-blue-400 mb-1.5">Bem-vindo ao Finology</p>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-              {mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
+              {mode === 'recover' ? 'Crie uma nova senha' : mode === 'forgot' ? 'Recuperar senha' : mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              {mode === 'login' ? 'Entre para acessar seu painel financeiro.' : 'Comece a organizar sua vida financeira.'}
+              {mode === 'recover' ? 'Defina uma nova senha para sua conta.' : mode === 'forgot' ? 'Informe seu e-mail para receber o link de recuperação.' : mode === 'login' ? 'Entre para acessar seu painel financeiro.' : 'Comece a organizar sua vida financeira.'}
             </p>
           </div>
 
-          <div className="flex rounded-xl bg-slate-800 p-1 mb-3">
+          {mode !== 'forgot' && mode !== 'recover' && <div className="flex rounded-xl bg-slate-800 p-1 mb-3">
             <button
               type="button"
               onClick={() => { setMode('login'); setLocalError(null); }}
@@ -105,10 +112,10 @@ export const AuthPage: React.FC = () => {
             >
               Cadastrar
             </button>
-          </div>
+          </div>}
 
           {(localError || authError) && (
-            <div role="status" className="mb-4 rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">
+            <div role="status" className={`mb-4 rounded-xl border p-3 text-sm ${mode === 'forgot' && localError?.startsWith('Se o e-mail') ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-rose-400/20 bg-rose-400/10 text-rose-200'}`}>
               {localError || authError}
             </div>
           )}
@@ -132,7 +139,7 @@ export const AuthPage: React.FC = () => {
               </label>
             )}
 
-            <label className="block text-sm font-medium text-slate-300">
+            {mode !== 'recover' && <label className="block text-sm font-medium text-slate-300">
               E-mail
               <span className="relative mt-2 block">
                 <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -146,9 +153,9 @@ export const AuthPage: React.FC = () => {
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2 pl-10 pr-4 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                 />
               </span>
-            </label>
+            </label>}
 
-            <label className="block text-sm font-medium text-slate-300">
+            {mode !== 'forgot' && <label className="block text-sm font-medium text-slate-300">
               Senha
               <span className="relative mt-2 block">
                 <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -171,24 +178,28 @@ export const AuthPage: React.FC = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </span>
-            </label>
+            </label>}
+            {mode === 'recover' && <label className="block text-sm font-medium text-slate-300">Confirmar nova senha<input type="password" required minLength={6} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 py-2 px-4 text-base text-white outline-none focus:border-blue-500" /></label>}
 
             <button
               type="submit"
               disabled={isLoading}
               className="w-full rounded-xl bg-blue-600 py-2 text-sm font-bold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60"
             >
-              {isLoading ? 'Aguarde…' : mode === 'login' ? 'Entrar na conta' : 'Criar minha conta'}
+              {isLoading ? 'Aguarde…' : mode === 'forgot' ? 'Enviar link de recuperação' : mode === 'recover' ? 'Salvar nova senha' : mode === 'login' ? 'Entrar na conta' : 'Criar minha conta'}
             </button>
           </form>
 
-          <div className="my-3 flex items-center gap-3 text-xs text-slate-500">
+          {mode === 'login' && <button type="button" onClick={() => { setMode('forgot'); setLocalError(null); }} className="mt-2 self-end text-sm font-semibold text-blue-400 hover:text-blue-300">Esqueci minha senha</button>}
+          {(mode === 'forgot' || mode === 'recover') && <button type="button" onClick={() => { setMode('login'); setLocalError(null); }} className="mt-3 text-sm font-semibold text-blue-400 hover:text-blue-300">Voltar para entrar</button>}
+
+          {mode !== 'forgot' && mode !== 'recover' && <div className="my-3 flex items-center gap-3 text-xs text-slate-500">
             <span className="h-px flex-1 bg-slate-800" />
             ou continue com
             <span className="h-px flex-1 bg-slate-800" />
-          </div>
+          </div>}
 
-          <button
+          {mode !== 'forgot' && mode !== 'recover' && <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading}
@@ -201,12 +212,12 @@ export const AuthPage: React.FC = () => {
               <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
             </svg>
             Continuar com Google
-          </button>
+          </button>}
 
-          <p className="mt-3 flex items-center justify-center gap-2 text-center text-xs text-slate-500">
+          {mode !== 'forgot' && mode !== 'recover' && <p className="mt-3 flex items-center justify-center gap-2 text-center text-xs text-slate-500">
             <ShieldCheck className="h-4 w-4 text-emerald-500" />
             Autenticação segura pelo Supabase
-          </p>
+          </p>}
         </section>
       </div>
     </main>

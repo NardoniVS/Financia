@@ -79,6 +79,7 @@ export const RechartsBalanceLine: React.FC<RechartsBalanceLineProps> = ({
 
           <XAxis
             dataKey="date"
+            ticks={data.length > 2 ? [data[0].date, data[data.length - 2].date, data[data.length - 1].date] : undefined}
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'rgba(255, 255, 255, 0.75)', fontSize: 10, fontWeight: 500 }}

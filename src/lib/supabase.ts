@@ -5,6 +5,13 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 
+export function getAuthRedirectUrl(): string {
+  if (typeof window === 'undefined') return 'https://financeiro.dozecloud.com.br';
+  return window.location.hostname === 'localhost'
+    ? window.location.origin
+    : 'https://financeiro.dozecloud.com.br';
+}
+
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabasePublishableKey, {
       auth: {

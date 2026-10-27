@@ -31,6 +31,7 @@ const MainAppContent: React.FC = () => {
     activeBottomTab,
     currentUser,
     isAuthReady,
+    isPasswordRecovery,
     isAdmin,
     isQuickActionOpen,
     isNotificationOpen,
@@ -45,7 +46,7 @@ const MainAppContent: React.FC = () => {
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser || isPasswordRecovery) {
     return (
       <Suspense fallback={<main className="min-h-screen flex items-center justify-center text-sm text-slate-400">Carregando…</main>}>
         <AuthPage />

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { getSupabase, supabase } from '../lib/supabase';
+import { getAuthRedirectUrl, getSupabase, supabase } from '../lib/supabase';
 import { supabaseService } from '../services/supabaseService';
 import {
   Transaction,
@@ -37,6 +37,9 @@ interface FinologyContextType {
   isAdmin: boolean;
   isAuthReady: boolean;
   isAuthenticated: boolean;
+  isPasswordRecovery: boolean;
+  sendPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   userProfile: UserProfile;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
@@ -219,6 +222,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Supabase Auth State
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // User Profile
@@ -259,6 +263,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
       const user = session?.user ?? null;
       setCurrentUser(user);
       setIsAuthReady(true);
@@ -330,7 +335,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const { error } = await getSupabase().auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: getAuthRedirectUrl() },
       });
       if (error) throw error;
     } catch (err: any) {
@@ -351,6 +356,22 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const sendPasswordReset = async (email: string) => {
+    setAuthError(null);
+    const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+      redirectTo: getAuthRedirectUrl(),
+    });
+    if (error) throw error;
+  };
+
+  const updatePassword = async (password: string) => {
+    setAuthError(null);
+    const { error } = await getSupabase().auth.updateUser({ password });
+    if (error) throw error;
+    setIsPasswordRecovery(false);
+    await getSupabase().auth.signOut();
+  };
+
   const registerWithEmail = async (name: string, email: string, pass: string): Promise<boolean> => {
     setAuthError(null);
     try {
@@ -362,7 +383,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             name,
             avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1A5CFF&color=fff`,
           },
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: getAuthRedirectUrl(),
         },
       });
       if (error) throw error;
@@ -675,6 +696,9 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isAdmin: currentUser?.app_metadata?.role === 'admin',
         isAuthReady,
         isAuthenticated: !!currentUser,
+        isPasswordRecovery,
+        sendPasswordReset,
+        updatePassword,
         userProfile,
         loginWithGoogle,
         loginWithEmail,
