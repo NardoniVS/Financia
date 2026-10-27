@@ -40,6 +40,9 @@ interface FinologyContextType {
   isPasswordRecovery: boolean;
   sendPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  updateAccountProfile: (values: { name: string; email: string; birthDate: string; password?: string }) => Promise<boolean>;
+  uploadProfileAvatar: (file: File) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   userProfile: UserProfile;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
@@ -230,6 +233,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     name: 'Minha conta',
     email: '',
     avatarUrl: '',
+    birthDate: '',
     accountLevel: 'Gratuito',
     privacyMode: false,
   });
@@ -268,7 +272,8 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setCurrentUser(user);
       setIsAuthReady(true);
       if (!user) {
-        setUserProfile({ name: 'Minha conta', email: '', avatarUrl: '', accountLevel: 'Gratuito', privacyMode: false });
+        setIsPasswordRecovery(false);
+        setUserProfile({ name: 'Minha conta', email: '', avatarUrl: '', birthDate: '', accountLevel: 'Gratuito', privacyMode: false });
         setTransactions([]);
         setCards([]);
         setConnectedAccounts([]);
@@ -286,6 +291,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         name: displayName,
         email: user.email || '',
         avatarUrl: String(metadata.avatar_url ?? metadata.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A5CFF&color=fff`),
+        birthDate: '',
         accountLevel: 'Pro',
         privacyMode: false,
       };
@@ -296,7 +302,10 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         queueMicrotask(() => {
           void (async () => {
             try {
-              await supabaseService.saveUserProfile(user.id, profile);
+              const savedProfile = await supabaseService.loadUserProfile(user.id);
+              const mergedProfile = { ...profile, ...savedProfile, email: user.email || '' };
+              setUserProfile(mergedProfile);
+              await supabaseService.saveUserProfile(user.id, mergedProfile);
             } catch (error) {
               console.error('Supabase account setup failed:', error);
             }
@@ -374,6 +383,42 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (error) throw error;
     setIsPasswordRecovery(false);
     await getSupabase().auth.signOut();
+  };
+
+  const updateAccountProfile = async (values: { name: string; email: string; birthDate: string; password?: string }) => {
+    if (!currentUser) throw new Error('Faça login novamente para editar seu perfil.');
+    setAuthError(null);
+    const emailChanged = values.email.trim().toLowerCase() !== (currentUser.email ?? '').toLowerCase();
+    const attributes: { data: Record<string, unknown>; email?: string; password?: string } = {
+      data: { ...currentUser.user_metadata, name: values.name.trim() },
+    };
+    if (emailChanged) attributes.email = values.email.trim();
+    if (values.password) attributes.password = values.password;
+    const { error } = await getSupabase().auth.updateUser(attributes);
+    if (error) throw error;
+
+    const updatedProfile = { ...userProfile, name: values.name.trim(), email: currentUser.email ?? '', birthDate: values.birthDate };
+    setUserProfile(updatedProfile);
+    await supabaseService.saveUserProfile(currentUser.id, updatedProfile);
+    return emailChanged;
+  };
+
+  const uploadProfileAvatar = async (file: File) => {
+    if (!currentUser) throw new Error('Faça login novamente para alterar sua foto.');
+    const avatarUrl = await supabaseService.uploadAvatar(currentUser.id, file, userProfile.avatarUrl);
+    const { error } = await getSupabase().auth.updateUser({
+      data: { ...currentUser.user_metadata, avatar_url: avatarUrl },
+    });
+    if (error) throw error;
+    const updatedProfile = { ...userProfile, avatarUrl };
+    setUserProfile(updatedProfile);
+    await supabaseService.saveUserProfile(currentUser.id, updatedProfile);
+  };
+
+  const deleteAccount = async () => {
+    await supabaseService.deleteAccount();
+    setIsPasswordRecovery(false);
+    await getSupabase().auth.signOut({ scope: 'local' });
   };
 
   const registerWithEmail = async (name: string, email: string, pass: string): Promise<boolean> => {
@@ -703,6 +748,9 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isPasswordRecovery,
         sendPasswordReset,
         updatePassword,
+        updateAccountProfile,
+        uploadProfileAvatar,
+        deleteAccount,
         userProfile,
         loginWithGoogle,
         loginWithEmail,

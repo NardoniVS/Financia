@@ -12,6 +12,12 @@ Aplicativo de controle financeiro pessoal com Supabase para autenticação e per
 
 O app usa Row Level Security: cada usuário só pode acessar os próprios dados.
 
+## Perfil, foto e exclusão da conta
+
+Para habilitar data de nascimento e fotos de perfil no Supabase, execute a migration `supabase/migrations/20261027000000_profile_settings.sql`.
+
+Para habilitar a exclusão de contas, publique a Edge Function com `supabase functions deploy delete-account`. Ela valida a sessão autenticada e usa as variáveis padrão `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Edge; a chave administrativa não deve ser colocada no app web.
+
 ## Rodar localmente
 
 **Pré-requisito:** Node.js

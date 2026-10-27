@@ -130,6 +130,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarUrl: string;
+  birthDate: string;
   accountLevel: 'Pro' | 'Premium' | 'Gratuito';
   privacyMode: boolean; // Ocultar saldos
 }

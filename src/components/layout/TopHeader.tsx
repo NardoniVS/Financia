@@ -9,8 +9,10 @@ import {
   Moon,
   Monitor,
   ShieldCheck,
+  UserRoundCog,
 } from 'lucide-react';
 import { useFinology } from '../../context/FinologyContext';
+import { ProfileSettingsModal } from '../profile/ProfileSettingsModal';
 
 export const TopHeader: React.FC = () => {
   const {
@@ -32,6 +34,7 @@ export const TopHeader: React.FC = () => {
   } = useFinology();
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -40,8 +43,11 @@ export const TopHeader: React.FC = () => {
       <div className="flex items-center justify-between gap-3 mb-4">
         {/* User Greeting & Avatar with Profile Menu */}
         <div className="relative">
-          <div
+          <button
+            type="button"
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            aria-haspopup="menu"
+            aria-expanded={isProfileMenuOpen}
             className="flex items-center gap-3 min-w-0 cursor-pointer group"
           >
             <div className="relative shrink-0">
@@ -66,7 +72,7 @@ export const TopHeader: React.FC = () => {
                 {userProfile.name}
               </h1>
             </div>
-          </div>
+          </button>
 
           {/* Profile & Auth Popover */}
           {isProfileMenuOpen && (
@@ -82,6 +88,18 @@ export const TopHeader: React.FC = () => {
                   {userProfile.email}
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProfileMenuOpen(false);
+                  setIsProfileSettingsOpen(true);
+                }}
+                className="mb-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-blue-300"
+              >
+                <UserRoundCog className="h-4 w-4" />
+                <span>Editar perfil</span>
+              </button>
 
               {/* Theme Selector (Claro / Escuro / Sistema) */}
               <div className="py-2.5 my-2 border-t border-b border-slate-100 dark:border-slate-800">
@@ -221,7 +239,7 @@ export const TopHeader: React.FC = () => {
           </button>
         </div>
       </div>
-
+      {isProfileSettingsOpen && <ProfileSettingsModal onClose={() => setIsProfileSettingsOpen(false)} />}
     </header>
   );
 };

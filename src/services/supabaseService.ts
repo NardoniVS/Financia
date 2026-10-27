@@ -99,11 +99,54 @@ export const supabaseService = {
         name: profile.name,
         email: profile.email,
         avatar_url: profile.avatarUrl,
+        birth_date: profile.birthDate || null,
         account_level: profile.accountLevel,
         privacy_mode: profile.privacyMode,
       },
-      { onConflict: 'user_id', ignoreDuplicates: true }
+      { onConflict: 'user_id' }
     );
+    ensureSuccess(error);
+  },
+
+  async loadUserProfile(userId: string): Promise<Partial<UserProfile> | null> {
+    const { data, error } = await getSupabase()
+      .from('profiles')
+      .select('name, email, avatar_url, birth_date, account_level, privacy_mode')
+      .eq('user_id', userId)
+      .maybeSingle();
+    ensureSuccess(error);
+    if (!data) return null;
+    return {
+      name: data.name,
+      email: data.email,
+      avatarUrl: data.avatar_url,
+      birthDate: data.birth_date ?? '',
+      accountLevel: data.account_level,
+      privacyMode: data.privacy_mode,
+    };
+  },
+
+  async uploadAvatar(userId: string, file: File, previousAvatarUrl: string): Promise<string> {
+    const client = getSupabase();
+    const path = `${userId}/${crypto.randomUUID()}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`;
+    const { error } = await client.storage.from('avatars').upload(path, file, {
+      contentType: file.type,
+      cacheControl: '3600',
+      upsert: false,
+    });
+    ensureSuccess(error);
+
+    const { data } = client.storage.from('avatars').getPublicUrl(path);
+    const previousPath = previousAvatarUrl.match(/\/storage\/v1\/object\/public\/avatars\/(.+)$/)?.[1];
+    if (previousPath) {
+      const { error: removeError } = await client.storage.from('avatars').remove([decodeURIComponent(previousPath)]);
+      if (removeError) console.warn('Could not remove previous profile image:', removeError.message);
+    }
+    return data.publicUrl;
+  },
+
+  async deleteAccount(): Promise<void> {
+    const { error } = await getSupabase().functions.invoke('delete-account', { body: {} });
     ensureSuccess(error);
   },
 
