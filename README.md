@@ -16,7 +16,18 @@ O app usa Row Level Security: cada usuário só pode acessar os próprios dados.
 
 Para habilitar data de nascimento e fotos de perfil no Supabase, execute a migration `supabase/migrations/20261027000000_profile_settings.sql`.
 
-Para habilitar a exclusão de contas, publique a Edge Function com `supabase functions deploy delete-account`. Ela valida a sessão autenticada e usa as variáveis padrão `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Edge; a chave administrativa não deve ser colocada no app web.
+Para habilitar a exclusão de contas, instale o Supabase CLI como dependência local, autentique, vincule o projeto e publique a Edge Function (requer Node.js 20 ou superior):
+
+```powershell
+npm.cmd install --save-dev supabase
+npx.cmd supabase login
+npx.cmd supabase link --project-ref <project-ref>
+npx.cmd supabase functions deploy delete-account
+```
+
+No PowerShell do Windows, use os sufixos `.cmd` acima para evitar bloqueios de execução dos scripts `npm.ps1` e `npx.ps1`.
+
+Encontre o `project-ref` no painel do projeto Supabase. A função valida a sessão autenticada e usa as variáveis padrão `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Edge; a chave administrativa não deve ser colocada no app web.
 
 ## Rodar localmente
 

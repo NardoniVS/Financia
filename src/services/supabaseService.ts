@@ -152,6 +152,9 @@ export const supabaseService = {
 
   async deleteAccount(): Promise<void> {
     const { error } = await getSupabase().functions.invoke('delete-account', { body: {} });
+    if (error && /failed to send a request to the edge function|function not found/i.test(error.message)) {
+      throw new Error('Não foi possível acessar a função de exclusão no Supabase. Publique a Edge Function "delete-account" e tente novamente.');
+    }
     ensureSuccess(error);
   },
 
