@@ -295,15 +295,38 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         accountLevel: 'Pro',
         privacyMode: false,
       };
+
+      if (event === 'USER_UPDATED') {
+        setUserProfile((previous) => ({
+          ...previous,
+          name: String(metadata.name ?? metadata.full_name ?? previous.name ?? displayName),
+          email: user.email || '',
+          avatarUrl: String(metadata.avatar_url ?? metadata.picture ?? (previous.avatarUrl || profile.avatarUrl)),
+        }));
+        queueMicrotask(() => {
+          void supabaseService.updateProfileEmail(user.id, user.email || '').catch((error) => {
+            console.error('Supabase profile email update failed:', error);
+          });
+        });
+        return;
+      }
+
       setUserProfile(profile);
 
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
         // Defer requests until after the auth callback returns to avoid blocking token refresh.
         queueMicrotask(() => {
           void (async () => {
             try {
               const savedProfile = await supabaseService.loadUserProfile(user.id);
-              const mergedProfile = { ...profile, ...savedProfile, email: user.email || '' };
+              const mergedProfile = {
+                ...profile,
+                ...savedProfile,
+                name: String(metadata.name ?? metadata.full_name ?? savedProfile?.name ?? profile.name),
+                avatarUrl: String(metadata.avatar_url ?? savedProfile?.avatarUrl ?? metadata.picture ?? profile.avatarUrl),
+                email: user.email || '',
+                birthDate: savedProfile?.birthDate ?? '',
+              };
               setUserProfile(mergedProfile);
               await supabaseService.saveUserProfile(user.id, mergedProfile);
             } catch (error) {

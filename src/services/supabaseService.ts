@@ -126,6 +126,11 @@ export const supabaseService = {
     };
   },
 
+  async updateProfileEmail(userId: string, email: string): Promise<void> {
+    const { error } = await getSupabase().from('profiles').update({ email }).eq('user_id', userId);
+    ensureSuccess(error);
+  },
+
   async uploadAvatar(userId: string, file: File, previousAvatarUrl: string): Promise<string> {
     const client = getSupabase();
     const path = `${userId}/${crypto.randomUUID()}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`;
