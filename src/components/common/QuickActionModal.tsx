@@ -109,7 +109,7 @@ export const QuickActionModal: React.FC = () => {
 
     addTransaction({
       title: title || (isExpense ? 'Despesa Avulsa' : 'Receita Avulsa'),
-      subtitle: `Registro manual via Finology`,
+      subtitle: `Registro manual via TudoOk`,
       category,
       amount: isExpense ? -val : val,
       date: new Date().toISOString(),

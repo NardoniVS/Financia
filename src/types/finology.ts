@@ -1,5 +1,5 @@
 /**
- * Modelos de dados TypeScript para o Finology
+ * Modelos de dados TypeScript para o TudoOk
  */
 
 export type TransactionType = 'expense' | 'income' | 'investment' | 'transfer';

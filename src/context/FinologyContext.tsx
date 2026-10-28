@@ -328,7 +328,7 @@ export const FinologyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       const metadata = user.user_metadata ?? {};
-      const displayName = String(metadata.name ?? metadata.full_name ?? user.email?.split('@')[0] ?? 'Usuário Finology');
+      const displayName = String(metadata.name ?? metadata.full_name ?? user.email?.split('@')[0] ?? 'Usuário TudoOk');
       const profile: UserProfile = {
         name: displayName,
         email: user.email || '',

@@ -80,7 +80,7 @@ export const AdminPage: React.FC = () => {
             <span className="text-xs font-bold uppercase tracking-wider">Administração</span>
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Painel administrador</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Visão geral das contas cadastradas no Finology.</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Visão geral das contas cadastradas no TudoOk.</p>
         </div>
         <button
           type="button"

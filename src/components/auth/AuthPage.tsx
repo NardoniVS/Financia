@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import {
   Eye,
   EyeOff,
-  Fingerprint,
   Lock,
   Mail,
   ShieldCheck,
   User,
 } from 'lucide-react';
 import { useFinology } from '../../context/FinologyContext';
+import { BrandLogo } from '../common/BrandLogo';
 
 export const AuthPage: React.FC = () => {
   const { loginWithGoogle, loginWithEmail, registerWithEmail, sendPasswordReset, updatePassword, isPasswordRecovery, authError } = useFinology();
@@ -64,16 +64,12 @@ export const AuthPage: React.FC = () => {
     <main className="min-h-[100dvh] bg-slate-950 text-white flex items-center justify-center p-2 sm:p-8">
       <div className="w-full max-w-5xl min-h-0 lg:min-h-[560px] grid lg:grid-cols-2 overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl">
         <section className="hidden lg:flex flex-col justify-between p-10 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-950">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white text-blue-700 font-black text-xl flex items-center justify-center">F</div>
-            <span className="text-xl font-extrabold tracking-tight">Finology</span>
-          </div>
-          <div className="max-w-md">
-            <Fingerprint className="w-10 h-10 mb-6 text-blue-200" />
-            <h1 className="text-4xl font-black leading-tight">Suas finanças, em um só lugar.</h1>
-            <p className="mt-4 text-blue-100/80 leading-relaxed">
-              Acompanhe suas contas, organize seu orçamento e tenha clareza sobre seu dinheiro.
-            </p>
+          <div className="max-w-md flex flex-1 flex-col justify-center">
+            <div className="mb-6">
+              <BrandLogo />
+            </div>
+            <h1 className="text-4xl font-black leading-tight">Chega de surpresas no fim do mês.</h1>
+            <p className="mt-4 text-blue-100/80 leading-relaxed">O <strong className="font-bold text-white">TudoOk</strong> foi feito para você acompanhar entradas, saídas e metas de forma simples, direta e sem planilhas chatas.</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-blue-100/70">
             <ShieldCheck className="w-4 h-4" />
@@ -82,18 +78,17 @@ export const AuthPage: React.FC = () => {
         </section>
 
         <section className="flex flex-col justify-center p-4 sm:p-8 lg:p-7">
-          <div className="flex items-center gap-3 mb-4 sm:mb-6 lg:hidden">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white font-black text-lg flex items-center justify-center">F</div>
-            <span className="text-lg font-extrabold tracking-tight">Finology</span>
+          <div className="mb-4 sm:mb-6 lg:hidden">
+            <BrandLogo compact />
           </div>
 
           <div className="mb-4">
-            <p className="text-sm font-semibold text-blue-400 mb-1.5">Bem-vindo ao Finology</p>
+            <p className="text-sm font-semibold text-blue-400 mb-1.5">Bem-vindo ao TudoOk</p>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
               {mode === 'recover' ? 'Crie uma nova senha' : mode === 'forgot' ? 'Recuperar senha' : mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              {mode === 'recover' ? 'Defina uma nova senha para sua conta.' : mode === 'forgot' ? 'Informe seu e-mail para receber o link de recuperação.' : mode === 'login' ? 'Entre para acessar seu painel financeiro.' : 'Comece a organizar sua vida financeira.'}
+              {mode === 'recover' ? 'Defina uma nova senha para sua conta.' : mode === 'forgot' ? 'Informe seu e-mail para receber o link de recuperação.' : mode === 'login' ? 'Entre para ver se está tudo ok com as suas finanças hoje.' : 'Comece a organizar sua vida financeira.'}
             </p>
           </div>
 

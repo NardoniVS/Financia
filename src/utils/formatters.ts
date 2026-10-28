@@ -1,5 +1,5 @@
 /**
- * Formatadores utilitários para Finology (padrão pt-BR)
+ * Formatadores utilitários para TudoOk (padrão pt-BR)
  */
 
 export const formatCurrency = (value: number, includeSign: boolean = false): string => {

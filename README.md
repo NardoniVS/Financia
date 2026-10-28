@@ -1,4 +1,4 @@
-# Financia
+# TudoOk
 
 Aplicativo de controle financeiro pessoal com Supabase para autenticação e persistência dos dados.
 

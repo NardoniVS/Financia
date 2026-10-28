@@ -219,7 +219,7 @@ export const TopHeader: React.FC = () => {
             onClick={() => setIsSearchOpen(true)}
             title="Buscar transações, ações ou categorias"
             className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Buscar no Finology"
+            aria-label="Buscar no TudoOk"
           >
             <Search className="w-4 h-4" />
           </button>

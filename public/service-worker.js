@@ -6,10 +6,10 @@ self.addEventListener('push', (event) => {
     payload = { body: event.data?.text() ?? '' };
   }
 
-  event.waitUntil(self.registration.showNotification(payload.title || 'Finology', {
+  event.waitUntil(self.registration.showNotification(payload.title || 'TudoOk', {
     body: payload.body || 'Você tem um lembrete financeiro.',
-    icon: '/assets/finology-icon.svg',
-    badge: '/assets/finology-icon.svg',
+    icon: '/assets/tudok-icon.svg',
+    badge: '/assets/tudok-icon.svg',
     data: { url: payload.url || '/' },
     tag: payload.tag || 'finology-reminder',
     renotify: false,

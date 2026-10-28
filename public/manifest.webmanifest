@@ -1,13 +1,13 @@
 {
-  "name": "Finology - Gestão Financeira",
-  "short_name": "Finology",
-  "description": "Controle suas contas recorrentes e finanças pessoais.",
+  "name": "TudoOk - Controle Financeiro",
+  "short_name": "TudoOk",
+  "description": "Chega de surpresas no fim do m\u00eas. Acompanhe entradas, sa\u00eddas e metas sem planilhas chatas.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
-    { "src": "/assets/finology-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/assets/tudok-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
